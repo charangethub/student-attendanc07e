@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
     const attText = await attRes.text();
     console.log('Attendance sync response:', attText);
 
-    // 6. Sync Monthly Absentee Report (date as column in monthly sheet)
+    // 6. Sync Monthly Absentee Report (each day = 9-column block)
     console.log(`Syncing monthly absentee report: ${monthLabel}, date: ${dateLabel}, ${absentees.length} absentees...`);
     const absRes = await fetch(appsScriptUrl, {
       method: 'POST',
@@ -126,8 +126,7 @@ Deno.serve(async (req) => {
         date,
         date_label: dateLabel,
         month_label: monthLabel,
-        students: absenteeStudents,
-        absentee_map: absenteeMap,
+        absentees: absentees,
       }),
     });
     const absText = await absRes.text();
