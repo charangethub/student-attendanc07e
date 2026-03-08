@@ -257,14 +257,14 @@ const AttendanceRecords = () => {
                   return (
                     <tr
                       key={s.id}
-                      className={`border-b border-border ${idx % 2 === 0 ? "bg-card" : "bg-accent/20"}`}
+                      className={`${idx % 2 === 0 ? "bg-card" : "bg-accent/20"}`}
                     >
-                      <td className="sticky left-0 z-[4] bg-inherit px-2 py-1.5 font-mono">{s.roll_no}</td>
-                      <td className="sticky left-[70px] z-[4] bg-inherit px-2 py-1.5 font-medium truncate max-w-[140px]">{s.student_name}</td>
-                      <td className="px-2 py-1.5 text-muted-foreground">{s.curriculum}</td>
-                      <td className="px-2 py-1.5 text-muted-foreground">{s.grade}</td>
-                      <td className="px-2 py-1.5 text-muted-foreground">{s.classroom_name}</td>
-                      <td className="px-2 py-1.5 text-center">
+                      <td className="sticky left-0 z-[4] bg-inherit px-2 py-1.5 font-mono border border-border">{s.roll_no}</td>
+                      <td className="sticky left-[70px] z-[4] bg-inherit px-2 py-1.5 font-medium truncate max-w-[140px] border border-border">{s.student_name}</td>
+                      <td className="px-2 py-1.5 text-muted-foreground border border-border">{s.curriculum}</td>
+                      <td className="px-2 py-1.5 text-muted-foreground border border-border">{s.grade}</td>
+                      <td className="px-2 py-1.5 text-muted-foreground border border-border">{s.classroom_name}</td>
+                      <td className="px-2 py-1.5 text-center border border-border">
                         <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-bold ${
                           isForfeited
                             ? "bg-destructive/15 text-destructive"
@@ -277,7 +277,7 @@ const AttendanceRecords = () => {
                         const dateStr = format(d, "yyyy-MM-dd");
                         const status = attendanceMap[s.id]?.[dateStr] || "";
                         return (
-                          <td key={dateStr} className="px-0.5 py-1.5 text-center">
+                          <td key={dateStr} className="px-0.5 py-1.5 text-center border border-border">
                             {status ? (
                               <span
                                 className={`inline-block w-6 rounded text-[10px] font-bold ${
@@ -298,13 +298,12 @@ const AttendanceRecords = () => {
                           </td>
                         );
                       })}
-                      <td className="px-2 py-1.5 text-center font-bold text-success">{stats.p}</td>
-                      <td className="px-2 py-1.5 text-center font-bold text-destructive">{stats.ab}</td>
-                      <td className="px-2 py-1.5 text-center font-bold text-warning">{stats.l}</td>
-                      <td className="px-2 py-1.5 text-center font-bold text-purple-600">{stats.h}</td>
-                      
-                      <td className="px-2 py-1.5 text-center font-bold text-muted-foreground">{stats.totalDays}</td>
-                      <td className={`px-2 py-1.5 text-center font-bold ${stats.pct >= 75 ? "text-success" : stats.pct >= 50 ? "text-warning" : "text-destructive"}`}>
+                      <td className="px-2 py-1.5 text-center font-bold text-success border border-border">{stats.p}</td>
+                      <td className="px-2 py-1.5 text-center font-bold text-destructive border border-border">{stats.ab}</td>
+                      <td className="px-2 py-1.5 text-center font-bold text-warning border border-border">{stats.l}</td>
+                      <td className="px-2 py-1.5 text-center font-bold text-purple-600 border border-border">{stats.h}</td>
+                      <td className="px-2 py-1.5 text-center font-bold text-muted-foreground border border-border">{stats.totalDays}</td>
+                      <td className={`px-2 py-1.5 text-center font-bold border border-border ${stats.pct >= 75 ? "text-success" : stats.pct >= 50 ? "text-warning" : "text-destructive"}`}>
                         {stats.pct}%
                       </td>
                     </tr>
