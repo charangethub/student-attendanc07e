@@ -123,7 +123,7 @@ const AttendanceRecords = () => {
       return;
     }
     const dateHeaders = daysInMonth.map((d) => format(d, "dd"));
-    const headers = ["Roll No", "Student Name", "Curriculum", "Classroom", "Grade", "Enrollment Status", ...dateHeaders, "P", "AB", "L", "H", "Working Days", "Total Days", "%"];
+    const headers = ["Roll No", "Student Name", "Curriculum", "Classroom", "Grade", "Enrollment Status", ...dateHeaders, "P", "AB", "L", "H", "Total Days", "%"];
     const rows = filtered.map((s) => {
       const stats = getStudentStats(s.id);
       const dayStatuses = daysInMonth.map((d) => {
