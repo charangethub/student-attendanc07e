@@ -25,11 +25,15 @@ const Login = () => {
     const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     setLoading(false);
     if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success("Logged in successfully!");
-      navigate("/dashboard");
+      const message = error.message.toLowerCase().includes("email not confirmed")
+        ? "Please verify your email before signing in. Check your inbox for the confirmation link."
+        : error.message;
+      toast.error(message);
+      return;
     }
+
+    toast.success("Logged in successfully!");
+    navigate("/dashboard");
   };
 
   return (
