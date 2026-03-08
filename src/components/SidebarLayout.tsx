@@ -7,7 +7,7 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
         <AppSidebar />
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col overflow-hidden">
           <header className="h-14 flex items-center gap-3 border-b border-border bg-card px-4">
             <SidebarTrigger />
             <div className="flex items-center gap-2">
