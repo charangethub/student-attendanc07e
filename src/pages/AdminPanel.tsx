@@ -12,15 +12,10 @@ import { toast } from "sonner";
 import { ArrowLeft, Crown, Plus, Save, Trash2, UserCheck } from "lucide-react";
 
 const PAGE_OPTIONS = [
-  "Student Dashboard",
-  "Academic Dashboard",
-  "Business Dashboard",
-  "Forfeited Students",
-  "Results Dashboard",
-  "Quarterly Marks",
-  "Half Yearly Marks",
-  "Pre-Final 1 Marks",
-  "Pre-Final 2 Marks",
+  "Dashboard",
+  "Mark Attendance",
+  "Absentee Report",
+  "Attendance Records",
 ];
 
 interface UserData {
