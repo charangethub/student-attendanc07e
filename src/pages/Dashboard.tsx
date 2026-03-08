@@ -1,6 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import DashboardAnalytics from "@/components/DashboardAnalytics";
+import MonthlyAnalytics from "@/components/MonthlyAnalytics";
 import { Button } from "@/components/ui/button";
 import { LogOut, Shield, Users, ClipboardCheck, AlertTriangle, BarChart3, RefreshCw } from "lucide-react";
 import { useState } from "react";
@@ -112,6 +113,11 @@ const Dashboard = () => {
         {/* Analytics Section */}
         <div className="mt-8">
           <DashboardAnalytics />
+        </div>
+
+        {/* Monthly Statistics */}
+        <div className="mt-8 border-t border-border pt-8">
+          <MonthlyAnalytics />
         </div>
       </main>
     </div>
