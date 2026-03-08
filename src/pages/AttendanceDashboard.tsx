@@ -39,7 +39,7 @@ const STATUS_OPTIONS = [
   { value: "P", label: "P", color: "bg-success text-success-foreground" },
   { value: "AB", label: "AB", color: "bg-destructive text-destructive-foreground" },
   { value: "L", label: "L", color: "bg-warning text-warning-foreground" },
-  { value: "H", label: "H", color: "bg-primary text-primary-foreground" },
+  { value: "H", label: "H", color: "bg-purple-600 text-white" },
 ];
 
 const AttendanceDashboard = () => {
