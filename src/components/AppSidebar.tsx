@@ -1,5 +1,5 @@
-import vedantuLogo from "@/assets/vedantu-logo.png";
 import {
+  Users,
   LayoutDashboard,
   ClipboardCheck,
   AlertTriangle,
@@ -68,7 +68,9 @@ export function AppSidebar() {
       <SidebarContent className="bg-sidebar-background">
         {/* Branding */}
         <div className="flex items-center gap-3 border-b border-sidebar-border px-4 py-4">
-          <img src={vedantuLogo} alt="Vedantu" className="h-8 w-auto shrink-0 rounded" />
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary">
+            <Users className="h-5 w-5 text-primary-foreground" />
+          </div>
           {!collapsed && (
             <span className="text-sm font-bold text-sidebar-foreground leading-tight">
               Vedantu Attendance<br />
