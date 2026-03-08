@@ -215,9 +215,9 @@ const AttendanceDashboard = () => {
   };
 
   const today = format(new Date(), "yyyy-MM-dd");
-  const isPastDate = selectedDate < today;
+  const isNotToday = selectedDate !== today;
   const isOwner = userRole === "owner";
-  const canEdit = !isPastDate || isOwner;
+  const canEdit = !isNotToday || isOwner;
 
   const presentCount = filteredStudents.filter((s) => attendance[s.id] === "P").length;
   const absentCount = filteredStudents.filter((s) => attendance[s.id] === "AB").length;

@@ -20,6 +20,7 @@ export type Database = {
           date: string
           id: string
           marked_by: string
+          remark: string | null
           status: string
           student_id: string
           updated_at: string
@@ -29,6 +30,7 @@ export type Database = {
           date: string
           id?: string
           marked_by: string
+          remark?: string | null
           status?: string
           student_id: string
           updated_at?: string
@@ -38,6 +40,7 @@ export type Database = {
           date?: string
           id?: string
           marked_by?: string
+          remark?: string | null
           status?: string
           student_id?: string
           updated_at?: string
