@@ -66,6 +66,17 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarContent className="bg-sidebar-background">
+        {/* Branding */}
+        <div className="flex items-center gap-3 border-b border-sidebar-border px-4 py-4">
+          <img src={vedantuLogo} alt="Vedantu" className="h-8 w-auto shrink-0 rounded" />
+          {!collapsed && (
+            <span className="text-sm font-bold text-sidebar-foreground leading-tight">
+              Vedantu Attendance<br />
+              <span className="text-[10px] font-normal text-sidebar-foreground/60">Management System</span>
+            </span>
+          )}
+        </div>
+
         <SidebarGroup>
           {!collapsed && (
             <SidebarGroupLabel className="text-sidebar-foreground/70 px-3 py-4 text-xs uppercase tracking-wider">
