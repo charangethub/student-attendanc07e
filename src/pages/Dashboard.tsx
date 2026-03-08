@@ -108,6 +108,11 @@ const Dashboard = () => {
             </button>
           ))}
         </div>
+
+        {/* Analytics Section */}
+        <div className="mt-8">
+          <DashboardAnalytics />
+        </div>
       </main>
     </div>
   );
