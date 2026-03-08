@@ -123,14 +123,14 @@ const AttendanceRecords = () => {
       return;
     }
     const dateHeaders = daysInMonth.map((d) => format(d, "dd"));
-    const headers = ["Roll No", "Student Name", "Curriculum", "Classroom", "Grade", "Enrollment Status", ...dateHeaders, "P", "AB", "L", "%"];
+    const headers = ["Roll No", "Student Name", "Curriculum", "Classroom", "Grade", "Enrollment Status", ...dateHeaders, "P", "AB", "L", "H", "Working Days", "Total Days", "%"];
     const rows = filtered.map((s) => {
       const stats = getStudentStats(s.id);
       const dayStatuses = daysInMonth.map((d) => {
         const dateStr = format(d, "yyyy-MM-dd");
         return attendanceMap[s.id]?.[dateStr] || "";
       });
-      return [s.roll_no, s.student_name, s.curriculum, s.classroom_name, s.grade, s.enrollment_status, ...dayStatuses, stats.p, stats.ab, stats.l, stats.pct + "%"];
+      return [s.roll_no, s.student_name, s.curriculum, s.classroom_name, s.grade, s.enrollment_status, ...dayStatuses, stats.p, stats.ab, stats.l, stats.h, stats.workingDays, stats.totalDays, stats.pct + "%"];
     });
     const csv = [headers.join(","), ...rows.map((r) => r.map((c) => `"${c}"`).join(","))].join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
