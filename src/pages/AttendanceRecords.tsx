@@ -130,7 +130,7 @@ const AttendanceRecords = () => {
         const dateStr = format(d, "yyyy-MM-dd");
         return attendanceMap[s.id]?.[dateStr] || "";
       });
-      return [s.roll_no, s.student_name, s.curriculum, s.classroom_name, s.grade, s.enrollment_status, ...dayStatuses, stats.p, stats.ab, stats.l, stats.h, stats.workingDays, stats.totalDays, stats.pct + "%"];
+      return [s.roll_no, s.student_name, s.curriculum, s.classroom_name, s.grade, s.enrollment_status, ...dayStatuses, stats.p, stats.ab, stats.l, stats.h, stats.totalDays, stats.pct + "%"];
     });
     const csv = [headers.join(","), ...rows.map((r) => r.map((c) => `"${c}"`).join(","))].join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
