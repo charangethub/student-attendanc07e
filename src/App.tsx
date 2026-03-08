@@ -75,14 +75,6 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/leave-approvals"
-              element={
-                <ProtectedRoute>
-                  <SidebarLayout><LeaveApprovals /></SidebarLayout>
-                </ProtectedRoute>
-              }
-            />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
