@@ -393,6 +393,7 @@ const AttendanceDashboard = () => {
                           {STATUS_OPTIONS.map((opt) => (
                             <button
                               key={opt.value}
+                              disabled={!canEdit}
                               onClick={() =>
                                 setAttendance((prev) => ({
                                   ...prev,
@@ -403,7 +404,7 @@ const AttendanceDashboard = () => {
                                 status === opt.value
                                   ? opt.color
                                   : "bg-muted text-muted-foreground hover:bg-muted/80"
-                              }`}
+                              } ${!canEdit ? "opacity-50 cursor-not-allowed" : ""}`}
                             >
                               {opt.label}
                             </button>
