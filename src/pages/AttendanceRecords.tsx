@@ -246,7 +246,7 @@ const AttendanceRecords = () => {
                   <th className="px-2 py-2 text-center font-semibold bg-destructive/10">AB</th>
                   <th className="px-2 py-2 text-center font-semibold bg-warning/10">L</th>
                   <th className="px-2 py-2 text-center font-semibold bg-purple-600/10">H</th>
-                  <th className="px-2 py-2 text-center font-semibold">Working</th>
+                  
                   <th className="px-2 py-2 text-center font-semibold">Total</th>
                   <th className="px-2 py-2 text-center font-semibold">%</th>
                 </tr>
