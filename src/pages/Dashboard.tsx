@@ -1,5 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import DashboardAnalytics from "@/components/DashboardAnalytics";
 import { Button } from "@/components/ui/button";
 import { LogOut, Shield, Users, ClipboardCheck, AlertTriangle, BarChart3, RefreshCw } from "lucide-react";
 import { useState } from "react";
@@ -106,6 +107,11 @@ const Dashboard = () => {
               <p className="mt-1 text-sm text-muted-foreground">{item.description}</p>
             </button>
           ))}
+        </div>
+
+        {/* Analytics Section */}
+        <div className="mt-8">
+          <DashboardAnalytics />
         </div>
       </main>
     </div>
