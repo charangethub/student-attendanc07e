@@ -1,6 +1,6 @@
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
 const SHEET_CSV_URL =
@@ -8,14 +8,17 @@ const SHEET_CSV_URL =
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-function parseCSVLine(line: string): string[] {
-  const result: string[] = [];
+// Parse CSV properly handling quoted fields with newlines
+function parseCSV(text: string): string[][] {
+  const rows: string[][] = [];
   let current = '';
   let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
+  const fields: string[] = [];
+
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
     if (inQuotes) {
-      if (ch === '"' && line[i + 1] === '"') {
+      if (ch === '"' && text[i + 1] === '"') {
         current += '"';
         i++;
       } else if (ch === '"') {
@@ -27,15 +30,28 @@ function parseCSVLine(line: string): string[] {
       if (ch === '"') {
         inQuotes = true;
       } else if (ch === ',') {
-        result.push(current.trim());
+        fields.push(current.trim());
         current = '';
+      } else if (ch === '\n' || ch === '\r') {
+        if (ch === '\r' && text[i + 1] === '\n') i++;
+        fields.push(current.trim());
+        current = '';
+        if (fields.some(f => f !== '')) {
+          rows.push([...fields]);
+        }
+        fields.length = 0;
       } else {
         current += ch;
       }
     }
   }
-  result.push(current.trim());
-  return result;
+  // Last row
+  fields.push(current.trim());
+  if (fields.some(f => f !== '')) {
+    rows.push([...fields]);
+  }
+
+  return rows;
 }
 
 Deno.serve(async (req) => {
@@ -48,7 +64,6 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    // Fetch CSV from Google Sheets
     console.log('Fetching Google Sheet CSV...');
     const csvResponse = await fetch(SHEET_CSV_URL);
     if (!csvResponse.ok) {
@@ -56,18 +71,22 @@ Deno.serve(async (req) => {
     }
 
     const csvText = await csvResponse.text();
-    const lines = csvText.split('\n').filter((l) => l.trim());
-    
-    if (lines.length < 2) {
+    const rows = parseCSV(csvText);
+
+    if (rows.length < 2) {
       return new Response(
         JSON.stringify({ success: true, message: 'No data rows found', synced: 0 }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Parse header to find column indices
-    const headers = parseCSVLine(lines[0]).map((h) => h.toLowerCase().replace(/\s+/g, '_').replace(/\n/g, '_'));
-    
+    // Normalize headers: lowercase, collapse whitespace/newlines to _
+    const headers = rows[0].map((h) =>
+      h.toLowerCase().replace(/[\s\n\r]+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '')
+    );
+
+    console.log('Parsed headers:', JSON.stringify(headers.slice(0, 20)));
+
     const colIndex = (names: string[]) => {
       for (const name of names) {
         const idx = headers.findIndex((h) => h.includes(name));
@@ -91,14 +110,17 @@ Deno.serve(async (req) => {
     const enrollmentStatusIdx = colIndex(['enrollment_status']);
     const mobileIdx = colIndex(['registered_contact_number', 'contact_number', 'mobile']);
 
-    console.log(`Found ${lines.length - 1} data rows`);
+    console.log('Column indices:', JSON.stringify({
+      rollNo: rollNoIdx, name: studentNameIdx, status: enrollmentStatusIdx, mobile: mobileIdx
+    }));
+    console.log(`Found ${rows.length - 1} data rows`);
 
     const students: any[] = [];
-    for (let i = 1; i < lines.length; i++) {
-      const cols = parseCSVLine(lines[i]);
-      const rollNo = rollNoIdx >= 0 ? cols[rollNoIdx] : '';
-      const name = studentNameIdx >= 0 ? cols[studentNameIdx] : '';
-      
+    for (let i = 1; i < rows.length; i++) {
+      const cols = rows[i];
+      const rollNo = rollNoIdx >= 0 ? (cols[rollNoIdx] || '') : '';
+      const name = studentNameIdx >= 0 ? (cols[studentNameIdx] || '') : '';
+
       if (!rollNo || !name) continue;
 
       students.push({
@@ -125,7 +147,7 @@ Deno.serve(async (req) => {
       const { error } = await supabase
         .from('students')
         .upsert(student, { onConflict: 'roll_no' });
-      
+
       if (error) {
         console.error(`Error upserting ${student.roll_no}:`, error.message);
       } else {
