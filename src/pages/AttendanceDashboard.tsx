@@ -274,7 +274,7 @@ const AttendanceDashboard = () => {
               <RefreshCw className={`mr-1 h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
               {syncing ? "Syncing..." : "Sync Sheet"}
             </Button>
-            <Button size="sm" onClick={handleSave} disabled={saving}>
+            <Button size="sm" onClick={handleSave} disabled={saving || !canEdit}>
               <Save className="mr-1 h-4 w-4" />
               {saving ? "Saving..." : "Save All"}
             </Button>
