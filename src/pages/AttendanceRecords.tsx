@@ -228,7 +228,7 @@ const AttendanceRecords = () => {
           <div className="py-16 text-center text-muted-foreground">No records found.</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-xs">
+            <table className="w-full text-xs border-collapse border border-border">
               <thead>
                 <tr className="border-b border-border bg-primary/10">
                   <th className="sticky left-0 z-[5] bg-primary/10 px-2 py-2 text-left font-semibold">Roll No</th>
