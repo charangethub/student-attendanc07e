@@ -1,6 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import DashboardAnalytics from "@/components/DashboardAnalytics";
+import MonthlyAnalytics from "@/components/MonthlyAnalytics";
 import { Button } from "@/components/ui/button";
 import { LogOut, Shield, Users, ClipboardCheck, AlertTriangle, BarChart3, RefreshCw } from "lucide-react";
 import { useState } from "react";
