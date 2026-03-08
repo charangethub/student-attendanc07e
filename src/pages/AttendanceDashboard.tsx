@@ -137,11 +137,28 @@ const AttendanceDashboard = () => {
     setAttendance(map);
   };
 
+  const syncSheetForDate = async (date: string) => {
+    try {
+      const { error: syncError } = await supabase.functions.invoke("sync-to-sheet", {
+        body: { date },
+      });
+      if (syncError) {
+        console.error("Sheet sync error:", syncError);
+        toast.error("Saved, but Google Sheet sync failed");
+      } else {
+        toast.success("Google Sheet synced successfully");
+      }
+    } catch (syncErr: any) {
+      console.error("Sheet sync error:", syncErr);
+      toast.error("Saved, but Google Sheet sync failed");
+    }
+  };
+
   const handleSave = async () => {
     if (!user) return;
     setSaving(true);
 
-    const records = Object.entries(attendance)
+    const recordsToUpsert = Object.entries(attendance)
       .filter(([, status]) => status)
       .map(([student_id, status]) => ({
         student_id,
@@ -150,38 +167,48 @@ const AttendanceDashboard = () => {
         marked_by: user.id,
       }));
 
-    if (records.length === 0) {
-      toast.error("No attendance to save");
+    const recordsToDelete = existingRecords
+      .filter((r) => !attendance[r.student_id])
+      .map((r) => r.student_id);
+
+    if (recordsToUpsert.length === 0 && recordsToDelete.length === 0) {
+      toast.error("No changes to save");
       setSaving(false);
       return;
     }
 
-    const { error } = await supabase
-      .from("attendance")
-      .upsert(records, { onConflict: "student_id,date" });
+    if (recordsToUpsert.length > 0) {
+      const { error: upsertError } = await supabase
+        .from("attendance")
+        .upsert(recordsToUpsert, { onConflict: "student_id,date" });
 
-    if (error) {
-      toast.error("Failed to save: " + error.message);
-    } else {
-      toast.success(`Saved attendance for ${records.length} students`);
-      fetchAttendance();
-
-      // Auto-sync to Google Sheet
-      try {
-        const { error: syncError } = await supabase.functions.invoke("sync-to-sheet", {
-          body: { date: selectedDate },
-        });
-        if (syncError) {
-          console.error("Sheet sync error:", syncError);
-          toast.error("Attendance saved but Google Sheet sync failed");
-        } else {
-          toast.success("Google Sheet synced successfully");
-        }
-      } catch (syncErr: any) {
-        console.error("Sheet sync error:", syncErr);
-        toast.error("Attendance saved but Google Sheet sync failed");
+      if (upsertError) {
+        toast.error("Failed to save: " + upsertError.message);
+        setSaving(false);
+        return;
       }
     }
+
+    if (recordsToDelete.length > 0) {
+      for (let i = 0; i < recordsToDelete.length; i += 100) {
+        const batch = recordsToDelete.slice(i, i + 100);
+        const { error: deleteError } = await supabase
+          .from("attendance")
+          .delete()
+          .eq("date", selectedDate)
+          .in("student_id", batch);
+
+        if (deleteError) {
+          toast.error("Failed to clear removed statuses: " + deleteError.message);
+          setSaving(false);
+          return;
+        }
+      }
+    }
+
+    toast.success(`Saved ${recordsToUpsert.length} updates and cleared ${recordsToDelete.length} records`);
+    await fetchAttendance();
+    await syncSheetForDate(selectedDate);
     setSaving(false);
   };
 
@@ -213,9 +240,10 @@ const AttendanceDashboard = () => {
     });
     setExistingRecords((prev) => prev.filter((r) => !studentIds.includes(r.student_id)));
     
+    await syncSheetForDate(selectedDate);
+    await fetchAttendance();
     toast.success(`Cleared attendance for ${studentIds.length} students on ${format(new Date(selectedDate), "dd MMM yyyy")}`);
     setClearing(false);
-    fetchAttendance();
   };
 
   const handleSync = async () => {
