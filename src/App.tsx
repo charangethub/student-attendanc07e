@@ -32,7 +32,7 @@ const App = () => (
             <Route path="/signup" element={<Signup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/leave-request" element={<LeaveRequestForm />} />
+            
 
             {/* Sidebar layout routes */}
             <Route
