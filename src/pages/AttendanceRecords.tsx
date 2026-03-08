@@ -232,6 +232,7 @@ const AttendanceRecords = () => {
                   <th className="sticky left-0 z-[5] bg-primary/10 px-2 py-2 text-left font-semibold">Roll No</th>
                   <th className="sticky left-[70px] z-[5] bg-primary/10 px-2 py-2 text-left font-semibold min-w-[140px]">Name</th>
                   <th className="px-2 py-2 text-left font-semibold min-w-[90px]">Curriculum</th>
+                  <th className="px-2 py-2 text-left font-semibold min-w-[60px]">Grade</th>
                   <th className="px-2 py-2 text-left font-semibold min-w-[120px]">Classroom</th>
                   <th className="px-2 py-2 text-center font-semibold min-w-[80px]">Status</th>
                   {daysInMonth.map((d) => (
