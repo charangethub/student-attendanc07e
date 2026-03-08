@@ -15,8 +15,6 @@ import AdminPanel from "./pages/AdminPanel";
 import AttendanceDashboard from "./pages/AttendanceDashboard";
 import AbsenteeDashboard from "./pages/AbsenteeDashboard";
 import AttendanceRecords from "./pages/AttendanceRecords";
-import LeaveRequestForm from "./pages/LeaveRequestForm";
-import LeaveApprovals from "./pages/LeaveApprovals";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,7 +32,7 @@ const App = () => (
             <Route path="/signup" element={<Signup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/leave-request" element={<LeaveRequestForm />} />
+            
 
             {/* Sidebar layout routes */}
             <Route
@@ -74,14 +72,6 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <SidebarLayout><AttendanceRecords /></SidebarLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/leave-approvals"
-              element={
-                <ProtectedRoute>
-                  <SidebarLayout><LeaveApprovals /></SidebarLayout>
                 </ProtectedRoute>
               }
             />
