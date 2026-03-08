@@ -42,7 +42,7 @@ const STATUS_OPTIONS = [
 ];
 
 const AttendanceDashboard = () => {
-  const { user } = useAuth();
+  const { user, userRole } = useAuth();
   const navigate = useNavigate();
   const [students, setStudents] = useState<Student[]>([]);
   const [attendance, setAttendance] = useState<Record<string, string>>({});
@@ -214,6 +214,11 @@ const AttendanceDashboard = () => {
     setSyncing(false);
   };
 
+  const today = format(new Date(), "yyyy-MM-dd");
+  const isPastDate = selectedDate < today;
+  const isOwner = userRole === "owner";
+  const canEdit = !isPastDate || isOwner;
+
   const presentCount = filteredStudents.filter((s) => attendance[s.id] === "P").length;
   const absentCount = filteredStudents.filter((s) => attendance[s.id] === "AB").length;
   const leaveCount = filteredStudents.filter((s) => attendance[s.id] === "L").length;
@@ -244,7 +249,7 @@ const AttendanceDashboard = () => {
           <div className="flex items-center gap-2">
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm" disabled={clearing || existingRecords.length === 0}>
+                <Button variant="destructive" size="sm" disabled={clearing || existingRecords.length === 0 || !canEdit}>
                   <Trash2 className="mr-1 h-4 w-4" />
                   {clearing ? "Clearing..." : "Clear All"}
                 </Button>
@@ -269,7 +274,7 @@ const AttendanceDashboard = () => {
               <RefreshCw className={`mr-1 h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
               {syncing ? "Syncing..." : "Sync Sheet"}
             </Button>
-            <Button size="sm" onClick={handleSave} disabled={saving}>
+            <Button size="sm" onClick={handleSave} disabled={saving || !canEdit}>
               <Save className="mr-1 h-4 w-4" />
               {saving ? "Saving..." : "Save All"}
             </Button>
@@ -332,6 +337,7 @@ const AttendanceDashboard = () => {
               size="sm"
               onClick={() => handleSetAll(opt.value)}
               className="text-xs"
+              disabled={!canEdit}
             >
               All {opt.label}
             </Button>
@@ -344,6 +350,13 @@ const AttendanceDashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Past date warning */}
+      {isPastDate && !isOwner && (
+        <div className="mx-4 mt-2 rounded-md border border-warning/50 bg-warning/10 px-4 py-2 text-sm text-warning">
+          ⚠️ You cannot edit attendance for past dates. Only owners can modify past records.
+        </div>
+      )}
 
       {/* Student List */}
       <div className="px-4 py-2">
@@ -387,6 +400,7 @@ const AttendanceDashboard = () => {
                           {STATUS_OPTIONS.map((opt) => (
                             <button
                               key={opt.value}
+                              disabled={!canEdit}
                               onClick={() =>
                                 setAttendance((prev) => ({
                                   ...prev,
@@ -397,7 +411,7 @@ const AttendanceDashboard = () => {
                                 status === opt.value
                                   ? opt.color
                                   : "bg-muted text-muted-foreground hover:bg-muted/80"
-                              }`}
+                              } ${!canEdit ? "opacity-50 cursor-not-allowed" : ""}`}
                             >
                               {opt.label}
                             </button>
