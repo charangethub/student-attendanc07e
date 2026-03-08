@@ -228,27 +228,26 @@ const AttendanceRecords = () => {
           <div className="py-16 text-center text-muted-foreground">No records found.</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-xs">
+            <table className="w-full text-xs border-collapse border border-border">
               <thead>
-                <tr className="border-b border-border bg-primary/10">
-                  <th className="sticky left-0 z-[5] bg-primary/10 px-2 py-2 text-left font-semibold">Roll No</th>
-                  <th className="sticky left-[70px] z-[5] bg-primary/10 px-2 py-2 text-left font-semibold min-w-[140px]">Name</th>
-                  <th className="px-2 py-2 text-left font-semibold min-w-[90px]">Curriculum</th>
-                  <th className="px-2 py-2 text-left font-semibold min-w-[60px]">Grade</th>
-                  <th className="px-2 py-2 text-left font-semibold min-w-[120px]">Classroom</th>
-                  <th className="px-2 py-2 text-center font-semibold min-w-[80px]">Status</th>
+                <tr className="bg-primary/10">
+                  <th className="sticky left-0 z-[5] bg-primary/10 px-2 py-2 text-left font-semibold border border-border">Roll No</th>
+                  <th className="sticky left-[70px] z-[5] bg-primary/10 px-2 py-2 text-left font-semibold min-w-[140px] border border-border">Name</th>
+                  <th className="px-2 py-2 text-left font-semibold min-w-[90px] border border-border">Curriculum</th>
+                  <th className="px-2 py-2 text-left font-semibold min-w-[60px] border border-border">Grade</th>
+                  <th className="px-2 py-2 text-left font-semibold min-w-[120px] border border-border">Classroom</th>
+                  <th className="px-2 py-2 text-center font-semibold min-w-[80px] border border-border">Status</th>
                   {daysInMonth.map((d) => (
-                    <th key={d.toISOString()} className="px-1 py-2 text-center font-semibold min-w-[28px]">
+                    <th key={d.toISOString()} className="px-1 py-2 text-center font-semibold min-w-[28px] border border-border">
                       {format(d, "dd")}
                     </th>
                   ))}
-                  <th className="px-2 py-2 text-center font-semibold bg-success/10">P</th>
-                  <th className="px-2 py-2 text-center font-semibold bg-destructive/10">AB</th>
-                  <th className="px-2 py-2 text-center font-semibold bg-warning/10">L</th>
-                  <th className="px-2 py-2 text-center font-semibold bg-purple-600/10">H</th>
-                  
-                  <th className="px-2 py-2 text-center font-semibold">Total</th>
-                  <th className="px-2 py-2 text-center font-semibold">%</th>
+                  <th className="px-2 py-2 text-center font-semibold bg-success/10 border border-border">P</th>
+                  <th className="px-2 py-2 text-center font-semibold bg-destructive/10 border border-border">AB</th>
+                  <th className="px-2 py-2 text-center font-semibold bg-warning/10 border border-border">L</th>
+                  <th className="px-2 py-2 text-center font-semibold bg-purple-600/10 border border-border">H</th>
+                  <th className="px-2 py-2 text-center font-semibold border border-border">Total</th>
+                  <th className="px-2 py-2 text-center font-semibold border border-border">%</th>
                 </tr>
               </thead>
               <tbody>
@@ -258,14 +257,14 @@ const AttendanceRecords = () => {
                   return (
                     <tr
                       key={s.id}
-                      className={`border-b border-border ${idx % 2 === 0 ? "bg-card" : "bg-accent/20"}`}
+                      className={`${idx % 2 === 0 ? "bg-card" : "bg-accent/20"}`}
                     >
-                      <td className="sticky left-0 z-[4] bg-inherit px-2 py-1.5 font-mono">{s.roll_no}</td>
-                      <td className="sticky left-[70px] z-[4] bg-inherit px-2 py-1.5 font-medium truncate max-w-[140px]">{s.student_name}</td>
-                      <td className="px-2 py-1.5 text-muted-foreground">{s.curriculum}</td>
-                      <td className="px-2 py-1.5 text-muted-foreground">{s.grade}</td>
-                      <td className="px-2 py-1.5 text-muted-foreground">{s.classroom_name}</td>
-                      <td className="px-2 py-1.5 text-center">
+                      <td className="sticky left-0 z-[4] bg-inherit px-2 py-1.5 font-mono border border-border">{s.roll_no}</td>
+                      <td className="sticky left-[70px] z-[4] bg-inherit px-2 py-1.5 font-medium truncate max-w-[140px] border border-border">{s.student_name}</td>
+                      <td className="px-2 py-1.5 text-muted-foreground border border-border">{s.curriculum}</td>
+                      <td className="px-2 py-1.5 text-muted-foreground border border-border">{s.grade}</td>
+                      <td className="px-2 py-1.5 text-muted-foreground border border-border">{s.classroom_name}</td>
+                      <td className="px-2 py-1.5 text-center border border-border">
                         <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-bold ${
                           isForfeited
                             ? "bg-destructive/15 text-destructive"
@@ -278,7 +277,7 @@ const AttendanceRecords = () => {
                         const dateStr = format(d, "yyyy-MM-dd");
                         const status = attendanceMap[s.id]?.[dateStr] || "";
                         return (
-                          <td key={dateStr} className="px-0.5 py-1.5 text-center">
+                          <td key={dateStr} className="px-0.5 py-1.5 text-center border border-border">
                             {status ? (
                               <span
                                 className={`inline-block w-6 rounded text-[10px] font-bold ${
@@ -299,13 +298,12 @@ const AttendanceRecords = () => {
                           </td>
                         );
                       })}
-                      <td className="px-2 py-1.5 text-center font-bold text-success">{stats.p}</td>
-                      <td className="px-2 py-1.5 text-center font-bold text-destructive">{stats.ab}</td>
-                      <td className="px-2 py-1.5 text-center font-bold text-warning">{stats.l}</td>
-                      <td className="px-2 py-1.5 text-center font-bold text-purple-600">{stats.h}</td>
-                      
-                      <td className="px-2 py-1.5 text-center font-bold text-muted-foreground">{stats.totalDays}</td>
-                      <td className={`px-2 py-1.5 text-center font-bold ${stats.pct >= 75 ? "text-success" : stats.pct >= 50 ? "text-warning" : "text-destructive"}`}>
+                      <td className="px-2 py-1.5 text-center font-bold text-success border border-border">{stats.p}</td>
+                      <td className="px-2 py-1.5 text-center font-bold text-destructive border border-border">{stats.ab}</td>
+                      <td className="px-2 py-1.5 text-center font-bold text-warning border border-border">{stats.l}</td>
+                      <td className="px-2 py-1.5 text-center font-bold text-purple-600 border border-border">{stats.h}</td>
+                      <td className="px-2 py-1.5 text-center font-bold text-muted-foreground border border-border">{stats.totalDays}</td>
+                      <td className={`px-2 py-1.5 text-center font-bold border border-border ${stats.pct >= 75 ? "text-success" : stats.pct >= 50 ? "text-warning" : "text-destructive"}`}>
                         {stats.pct}%
                       </td>
                     </tr>
