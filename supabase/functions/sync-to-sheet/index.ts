@@ -74,14 +74,20 @@ Deno.serve(async (req) => {
       };
     });
 
-    // Build absentees list (AB and L only)
-    const absentees = records.filter((r: any) => r.status === 'AB' || r.status === 'L');
-
-    // Build absentee map for monthly sheet: roll_no -> status
-    const absenteeMap: Record<string, string> = {};
-    absentees.forEach((r: any) => {
-      absenteeMap[r.roll_no] = r.status;
-    });
+    // Build absentees list (AB and L only) with full details
+    const absentees = records
+      .filter((r: any) => r.status === 'AB' || r.status === 'L')
+      .map((r: any) => ({
+        roll_no: r.roll_no,
+        student_name: r.student_name,
+        curriculum: r.curriculum,
+        grade: r.grade,
+        classroom_name: r.classroom_name,
+        center: r.center,
+        mobile_number: r.mobile_number,
+        status: r.status,
+        remark: r.remark,
+      }));
 
     // Build month label and date label for sheet naming
     const dateObj = new Date(date + 'T00:00:00');
@@ -89,17 +95,6 @@ Deno.serve(async (req) => {
     const monthLabel = `${monthNames[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
     const day = dateObj.getDate().toString().padStart(2, '0');
     const dateLabel = `${day} ${monthNames[dateObj.getMonth()]}`;
-
-    // Build student list for absentee sheet (all enrolled)
-    const absenteeStudents = enrolledStudents.map((s: any) => ({
-      roll_no: s.roll_no || '',
-      student_name: s.student_name || '',
-      grade: s.grade || '',
-      curriculum: s.curriculum || '',
-      classroom_name: s.classroom_name || '',
-      center: s.center || '',
-      mobile_number: s.mobile_number || '',
-    }));
 
     // 4. Sync Master sheet
     console.log(`Syncing master sheet with ${enrolledStudents.length} students...`);
