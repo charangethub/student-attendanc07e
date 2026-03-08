@@ -240,9 +240,10 @@ const AttendanceDashboard = () => {
     });
     setExistingRecords((prev) => prev.filter((r) => !studentIds.includes(r.student_id)));
     
+    await syncSheetForDate(selectedDate);
+    await fetchAttendance();
     toast.success(`Cleared attendance for ${studentIds.length} students on ${format(new Date(selectedDate), "dd MMM yyyy")}`);
     setClearing(false);
-    fetchAttendance();
   };
 
   const handleSync = async () => {
