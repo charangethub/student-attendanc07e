@@ -168,7 +168,40 @@ const AttendanceDashboard = () => {
     setSaving(false);
   };
 
-  const handleSync = async () => {
+  const handleClearAll = async () => {
+    if (!user) return;
+    setClearing(true);
+    const studentIds = filteredStudents.map((s) => s.id);
+    
+    // Delete in batches of 100
+    for (let i = 0; i < studentIds.length; i += 100) {
+      const batch = studentIds.slice(i, i + 100);
+      const { error } = await supabase
+        .from("attendance")
+        .delete()
+        .eq("date", selectedDate)
+        .in("student_id", batch);
+      if (error) {
+        toast.error("Failed to clear: " + error.message);
+        setClearing(false);
+        return;
+      }
+    }
+    
+    // Clear local state for filtered students
+    setAttendance((prev) => {
+      const updated = { ...prev };
+      studentIds.forEach((id) => delete updated[id]);
+      return updated;
+    });
+    setExistingRecords((prev) => prev.filter((r) => !studentIds.includes(r.student_id)));
+    
+    toast.success(`Cleared attendance for ${studentIds.length} students on ${format(new Date(selectedDate), "dd MMM yyyy")}`);
+    setClearing(false);
+    fetchAttendance();
+  };
+
+
     setSyncing(true);
     try {
       const { data, error } = await supabase.functions.invoke("sync-google-sheet");
