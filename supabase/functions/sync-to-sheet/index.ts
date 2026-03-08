@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
 
     console.log(`Syncing attendance for date: ${date}`);
 
-    // 1. Fetch ALL students (not just enrolled) for Master sheet
+    // 1. Fetch ALL students
     const { data: allStudents, error: studentsErr } = await supabase
       .from('students')
       .select('id, roll_no, student_name, curriculum, grade, batch_type, classroom_name, classroom_id, enrollment_status, enrollment_date, center, mobile_number, zone, user_id_vedantu, order_id')
@@ -47,9 +47,19 @@ Deno.serve(async (req) => {
 
     if (attErr) throw new Error('Failed to fetch attendance: ' + attErr.message);
 
-    // Build full attendance records with ALL student fields
-    const records = (attendanceData ?? []).map((a: any) => {
-      const s = studentById[a.student_id] || {};
+    // Build attendance lookup by student_id
+    const attendanceByStudent: Record<string, any> = {};
+    (attendanceData ?? []).forEach((a: any) => {
+      attendanceByStudent[a.student_id] = a;
+    });
+
+    // Enrolled students only
+    const enrolledStudents = (allStudents ?? []).filter((s: any) => s.enrollment_status === 'ENROLLED');
+
+    // 3. Build FULL records for ALL enrolled students (include empty status for students without records)
+    // This ensures the sheet OVERWRITES cells — clearing old values when status is removed
+    const records = enrolledStudents.map((s: any) => {
+      const att = attendanceByStudent[s.id];
       return {
         roll_no: s.roll_no || '',
         student_name: s.student_name || '',
@@ -59,18 +69,15 @@ Deno.serve(async (req) => {
         enrollment_status: s.enrollment_status || '',
         center: s.center || '',
         mobile_number: s.mobile_number || '',
-        status: a.status,
-        remark: a.remark || '',
+        status: att ? att.status : '',  // empty string if no record — sheet will clear the cell
+        remark: att ? (att.remark || '') : '',
       };
     });
 
     // Build absentees list (AB and L only)
     const absentees = records.filter((r: any) => r.status === 'AB' || r.status === 'L');
 
-    // Enrolled students only for master sheet
-    const enrolledStudents = (allStudents ?? []).filter((s: any) => s.enrollment_status === 'ENROLLED');
-
-    // 3. Sync Master sheet
+    // 4. Sync Master sheet
     console.log(`Syncing master sheet with ${enrolledStudents.length} students...`);
     const masterRes = await fetch(appsScriptUrl, {
       method: 'POST',
@@ -80,8 +87,8 @@ Deno.serve(async (req) => {
     const masterText = await masterRes.text();
     console.log('Master sync response:', masterText);
 
-    // 4. Sync Daily Attendance
-    console.log(`Syncing daily attendance with ${records.length} records...`);
+    // 5. Sync Daily Attendance — sends ALL enrolled students so sheet overwrites correctly
+    console.log(`Syncing daily attendance with ${records.length} records (${records.filter((r: any) => r.status).length} marked)...`);
     const attRes = await fetch(appsScriptUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -90,7 +97,7 @@ Deno.serve(async (req) => {
     const attText = await attRes.text();
     console.log('Attendance sync response:', attText);
 
-    // 5. Sync Absentee Report
+    // 6. Sync Absentee Report
     console.log(`Syncing absentee report with ${absentees.length} absentees...`);
     const absRes = await fetch(appsScriptUrl, {
       method: 'POST',
@@ -101,7 +108,7 @@ Deno.serve(async (req) => {
     console.log('Absentee sync response:', absText);
 
     return new Response(
-      JSON.stringify({ success: true, synced: records.length, absentees: absentees.length }),
+      JSON.stringify({ success: true, synced: records.filter((r: any) => r.status).length, total: records.length, absentees: absentees.length }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
