@@ -3,13 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ArrowLeft, Download, MessageCircle, CalendarDays, Search } from "lucide-react";
+import { ArrowLeft, Download, MessageCircle, CalendarDays, Search, Save } from "lucide-react";
 import { format } from "date-fns";
 
 type AbsenteeRow = {
   student_id: string;
+  attendance_id: string;
   roll_no: string;
   student_name: string;
   grade: string;
@@ -18,15 +20,18 @@ type AbsenteeRow = {
   center: string;
   mobile_number: string;
   status: string;
+  remark: string;
 };
 
 const AbsenteeDashboard = () => {
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [absentees, setAbsentees] = useState<AbsenteeRow[]>([]);
+  const [remarks, setRemarks] = useState<Record<string, string>>({});
   const [classroomFilter, setClassroomFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [savingRemarks, setSavingRemarks] = useState(false);
 
   useEffect(() => {
     fetchAbsentees();
@@ -34,29 +39,32 @@ const AbsenteeDashboard = () => {
 
   const fetchAbsentees = async () => {
     setLoading(true);
-    // Get all attendance records for the date with status AB or L
     const { data: attendanceData } = await supabase
       .from("attendance")
-      .select("student_id, status")
+      .select("id, student_id, status, remark")
       .eq("date", selectedDate)
       .in("status", ["AB", "L"]);
 
     if (!attendanceData || attendanceData.length === 0) {
       setAbsentees([]);
+      setRemarks({});
       setLoading(false);
       return;
     }
 
-    const studentIds = attendanceData.map((a) => a.student_id);
+    const studentIds = attendanceData.map((a: any) => a.student_id);
     const { data: studentsData } = await supabase
       .from("students")
       .select("id, roll_no, student_name, grade, curriculum, classroom_name, center, mobile_number")
       .in("id", studentIds);
 
+    const remarkMap: Record<string, string> = {};
     const rows: AbsenteeRow[] = (studentsData ?? []).map((s: any) => {
-      const att = attendanceData.find((a) => a.student_id === s.id);
+      const att = attendanceData.find((a: any) => a.student_id === s.id);
+      remarkMap[att?.id ?? ""] = (att as any)?.remark ?? "";
       return {
         student_id: s.id,
+        attendance_id: att?.id ?? "",
         roll_no: s.roll_no,
         student_name: s.student_name,
         grade: s.grade,
@@ -65,10 +73,12 @@ const AbsenteeDashboard = () => {
         center: s.center,
         mobile_number: s.mobile_number,
         status: att?.status ?? "AB",
+        remark: (att as any)?.remark ?? "",
       };
     });
 
     setAbsentees(rows);
+    setRemarks(remarkMap);
     setLoading(false);
   };
 
@@ -88,6 +98,33 @@ const AbsenteeDashboard = () => {
     });
   }, [absentees, classroomFilter, searchQuery]);
 
+  const handleRemarkChange = (attendanceId: string, value: string) => {
+    setRemarks((prev) => ({ ...prev, [attendanceId]: value }));
+  };
+
+  const handleSaveRemarks = async () => {
+    setSavingRemarks(true);
+    const updates = Object.entries(remarks).filter(([id]) => id);
+    
+    let errorOccurred = false;
+    for (const [id, remark] of updates) {
+      const { error } = await supabase
+        .from("attendance")
+        .update({ remark } as any)
+        .eq("id", id);
+      if (error) {
+        errorOccurred = true;
+        toast.error("Failed to save remark: " + error.message);
+        break;
+      }
+    }
+    
+    if (!errorOccurred) {
+      toast.success("Remarks saved successfully");
+    }
+    setSavingRemarks(false);
+  };
+
   const sendWhatsApp = (mobile: string, name: string, date: string) => {
     const cleanMobile = mobile.replace(/\D/g, "");
     const phoneNumber = cleanMobile.startsWith("91") ? cleanMobile : `91${cleanMobile}`;
@@ -102,11 +139,11 @@ const AbsenteeDashboard = () => {
       toast.error("No data to export");
       return;
     }
-    const headers = ["Roll No", "Student Name", "Grade", "Curriculum", "Classroom", "Center", "Mobile", "Status"];
+    const headers = ["Roll No", "Student Name", "Grade", "Curriculum", "Classroom", "Center", "Mobile", "Status", "Remark"];
     const rows = filtered.map((a) => [
-      a.roll_no, a.student_name, a.grade, a.curriculum, a.classroom_name, a.center, a.mobile_number, a.status,
+      a.roll_no, a.student_name, a.grade, a.curriculum, a.classroom_name, a.center, a.mobile_number, a.status, remarks[a.attendance_id] ?? "",
     ]);
-    const csv = [headers.join(","), ...rows.map((r) => r.map((c) => `"${c}"`).join(","))].join("\n");
+    const csv = [headers.join(","), ...rows.map((r) => r.map((c) => `"${(c ?? "").replace(/"/g, '""')}"`).join(","))].join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -131,10 +168,16 @@ const AbsenteeDashboard = () => {
               <p className="text-xs text-muted-foreground">{filtered.length} absent/on leave</p>
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={exportCSV}>
-            <Download className="mr-1 h-4 w-4" />
-            Export CSV
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handleSaveRemarks} disabled={savingRemarks}>
+              <Save className="mr-1 h-4 w-4" />
+              {savingRemarks ? "Saving..." : "Save Remarks"}
+            </Button>
+            <Button variant="outline" size="sm" onClick={exportCSV}>
+              <Download className="mr-1 h-4 w-4" />
+              Export CSV
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -194,13 +237,14 @@ const AbsenteeDashboard = () => {
                   <th className="px-3 py-2 text-left text-xs font-semibold">Classroom</th>
                   <th className="px-3 py-2 text-left text-xs font-semibold">Mobile</th>
                   <th className="px-3 py-2 text-center text-xs font-semibold">Status</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold min-w-[250px]">Remark</th>
                   <th className="px-3 py-2 text-center text-xs font-semibold">WhatsApp</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((a, idx) => (
                   <tr
-                    key={a.student_id}
+                    key={a.attendance_id}
                     className={`border-b border-border ${idx % 2 === 0 ? "bg-card" : "bg-accent/20"}`}
                   >
                     <td className="px-3 py-2 text-xs font-mono">{a.roll_no}</td>
@@ -218,6 +262,15 @@ const AbsenteeDashboard = () => {
                       >
                         {a.status === "AB" ? "Absent" : "Leave"}
                       </span>
+                    </td>
+                    <td className="px-3 py-2">
+                      <Textarea
+                        placeholder="Enter reason for absence..."
+                        value={remarks[a.attendance_id] ?? ""}
+                        onChange={(e) => handleRemarkChange(a.attendance_id, e.target.value)}
+                        className="min-h-[60px] text-xs resize-y"
+                        rows={2}
+                      />
                     </td>
                     <td className="px-3 py-2 text-center">
                       {a.mobile_number ? (

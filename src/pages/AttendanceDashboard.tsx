@@ -215,9 +215,9 @@ const AttendanceDashboard = () => {
   };
 
   const today = format(new Date(), "yyyy-MM-dd");
-  const isPastDate = selectedDate < today;
+  const isNotToday = selectedDate !== today;
   const isOwner = userRole === "owner";
-  const canEdit = !isPastDate || isOwner;
+  const canEdit = !isNotToday || isOwner;
 
   const presentCount = filteredStudents.filter((s) => attendance[s.id] === "P").length;
   const absentCount = filteredStudents.filter((s) => attendance[s.id] === "AB").length;
@@ -351,10 +351,10 @@ const AttendanceDashboard = () => {
         </div>
       </div>
 
-      {/* Past date warning */}
-      {isPastDate && !isOwner && (
+      {/* Date warning */}
+      {isNotToday && !isOwner && (
         <div className="mx-4 mt-2 rounded-md border border-warning/50 bg-warning/10 px-4 py-2 text-sm text-warning">
-          ⚠️ You cannot edit attendance for past dates. Only owners can modify past records.
+          ⚠️ You can only mark attendance for today. Only owners can modify other dates.
         </div>
       )}
 
