@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      attendance: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          marked_by: string
+          status: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          marked_by: string
+          status?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          marked_by?: string
+          status?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       page_access: {
         Row: {
           has_access: boolean
@@ -59,6 +97,66 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      students: {
+        Row: {
+          batch_type: string
+          center: string
+          classroom_id: string
+          classroom_name: string
+          created_at: string
+          curriculum: string
+          enrollment_date: string
+          enrollment_status: string
+          grade: string
+          id: string
+          mobile_number: string
+          order_id: string
+          roll_no: string
+          student_name: string
+          updated_at: string
+          user_id_vedantu: string
+          zone: string
+        }
+        Insert: {
+          batch_type?: string
+          center?: string
+          classroom_id?: string
+          classroom_name?: string
+          created_at?: string
+          curriculum?: string
+          enrollment_date?: string
+          enrollment_status?: string
+          grade?: string
+          id?: string
+          mobile_number?: string
+          order_id?: string
+          roll_no?: string
+          student_name?: string
+          updated_at?: string
+          user_id_vedantu?: string
+          zone?: string
+        }
+        Update: {
+          batch_type?: string
+          center?: string
+          classroom_id?: string
+          classroom_name?: string
+          created_at?: string
+          curriculum?: string
+          enrollment_date?: string
+          enrollment_status?: string
+          grade?: string
+          id?: string
+          mobile_number?: string
+          order_id?: string
+          roll_no?: string
+          student_name?: string
+          updated_at?: string
+          user_id_vedantu?: string
+          zone?: string
         }
         Relationships: []
       }

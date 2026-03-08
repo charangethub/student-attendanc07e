@@ -11,6 +11,9 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import AdminPanel from "./pages/AdminPanel";
+import AttendanceDashboard from "./pages/AttendanceDashboard";
+import AbsenteeDashboard from "./pages/AbsenteeDashboard";
+import AttendanceRecords from "./pages/AttendanceRecords";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +44,30 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole={["owner", "admin"]}>
                   <AdminPanel />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/attendance"
+              element={
+                <ProtectedRoute>
+                  <AttendanceDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/absentees"
+              element={
+                <ProtectedRoute>
+                  <AbsenteeDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/records"
+              element={
+                <ProtectedRoute>
+                  <AttendanceRecords />
                 </ProtectedRoute>
               }
             />
