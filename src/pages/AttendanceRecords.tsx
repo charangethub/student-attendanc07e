@@ -302,6 +302,9 @@ const AttendanceRecords = () => {
                       <td className="px-2 py-1.5 text-center font-bold text-success">{stats.p}</td>
                       <td className="px-2 py-1.5 text-center font-bold text-destructive">{stats.ab}</td>
                       <td className="px-2 py-1.5 text-center font-bold text-warning">{stats.l}</td>
+                      <td className="px-2 py-1.5 text-center font-bold text-purple-600">{stats.h}</td>
+                      <td className="px-2 py-1.5 text-center font-bold text-muted-foreground">{stats.workingDays}</td>
+                      <td className="px-2 py-1.5 text-center font-bold text-muted-foreground">{stats.totalDays}</td>
                       <td className={`px-2 py-1.5 text-center font-bold ${stats.pct >= 75 ? "text-success" : stats.pct >= 50 ? "text-warning" : "text-destructive"}`}>
                         {stats.pct}%
                       </td>
