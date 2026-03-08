@@ -54,6 +54,7 @@ const AttendanceDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [clearing, setClearing] = useState(false);
 
   useEffect(() => {
     fetchStudents();
