@@ -7,8 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
-  ArrowLeft, CalendarDays, Check, X, Clock, Save, RefreshCw, Search,
+  ArrowLeft, CalendarDays, Check, X, Clock, Save, RefreshCw, Search, Trash2,
 } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { format } from "date-fns";
 
 type Student = {
@@ -50,6 +54,7 @@ const AttendanceDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [clearing, setClearing] = useState(false);
 
   useEffect(() => {
     fetchStudents();
@@ -163,6 +168,39 @@ const AttendanceDashboard = () => {
     setSaving(false);
   };
 
+  const handleClearAll = async () => {
+    if (!user) return;
+    setClearing(true);
+    const studentIds = filteredStudents.map((s) => s.id);
+    
+    // Delete in batches of 100
+    for (let i = 0; i < studentIds.length; i += 100) {
+      const batch = studentIds.slice(i, i + 100);
+      const { error } = await supabase
+        .from("attendance")
+        .delete()
+        .eq("date", selectedDate)
+        .in("student_id", batch);
+      if (error) {
+        toast.error("Failed to clear: " + error.message);
+        setClearing(false);
+        return;
+      }
+    }
+    
+    // Clear local state for filtered students
+    setAttendance((prev) => {
+      const updated = { ...prev };
+      studentIds.forEach((id) => delete updated[id]);
+      return updated;
+    });
+    setExistingRecords((prev) => prev.filter((r) => !studentIds.includes(r.student_id)));
+    
+    toast.success(`Cleared attendance for ${studentIds.length} students on ${format(new Date(selectedDate), "dd MMM yyyy")}`);
+    setClearing(false);
+    fetchAttendance();
+  };
+
   const handleSync = async () => {
     setSyncing(true);
     try {
@@ -204,6 +242,29 @@ const AttendanceDashboard = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm" disabled={clearing || existingRecords.length === 0}>
+                  <Trash2 className="mr-1 h-4 w-4" />
+                  {clearing ? "Clearing..." : "Clear All"}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Clear Attendance?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will delete all attendance records for {filteredStudents.length} filtered students on{" "}
+                    <strong>{format(new Date(selectedDate), "dd MMM yyyy")}</strong>. You can then re-mark attendance.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleClearAll} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Yes, Clear All
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             <Button variant="outline" size="sm" onClick={handleSync} disabled={syncing}>
               <RefreshCw className={`mr-1 h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
               {syncing ? "Syncing..." : "Sync Sheet"}
