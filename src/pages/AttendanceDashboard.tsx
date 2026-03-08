@@ -337,6 +337,7 @@ const AttendanceDashboard = () => {
               size="sm"
               onClick={() => handleSetAll(opt.value)}
               className="text-xs"
+              disabled={!canEdit}
             >
               All {opt.label}
             </Button>
