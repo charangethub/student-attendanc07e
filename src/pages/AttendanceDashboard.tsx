@@ -249,7 +249,7 @@ const AttendanceDashboard = () => {
           <div className="flex items-center gap-2">
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm" disabled={clearing || existingRecords.length === 0}>
+                <Button variant="destructive" size="sm" disabled={clearing || existingRecords.length === 0 || !canEdit}>
                   <Trash2 className="mr-1 h-4 w-4" />
                   {clearing ? "Clearing..." : "Clear All"}
                 </Button>
