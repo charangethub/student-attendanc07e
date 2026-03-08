@@ -104,15 +104,17 @@ const AttendanceRecords = () => {
 
   const getStudentStats = (studentId: string) => {
     const records = attendanceMap[studentId] || {};
-    let p = 0, ab = 0, l = 0;
+    let p = 0, ab = 0, l = 0, h = 0;
     Object.values(records).forEach((s) => {
       if (s === "P") p++;
       else if (s === "AB") ab++;
       else if (s === "L") l++;
+      else if (s === "H") h++;
     });
-    const total = p + ab + l;
-    const pct = total > 0 ? Math.round((p / total) * 100) : 0;
-    return { p, ab, l, total, pct };
+    const totalDays = daysInMonth.length;
+    const workingDays = totalDays - h;
+    const pct = workingDays > 0 ? Math.round((p / workingDays) * 100) : 0;
+    return { p, ab, l, h, totalDays, workingDays, pct };
   };
 
   const exportCSV = () => {
