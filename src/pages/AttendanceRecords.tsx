@@ -230,25 +230,24 @@ const AttendanceRecords = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-xs border-collapse border border-border">
               <thead>
-                <tr className="border-b border-border bg-primary/10">
-                  <th className="sticky left-0 z-[5] bg-primary/10 px-2 py-2 text-left font-semibold">Roll No</th>
-                  <th className="sticky left-[70px] z-[5] bg-primary/10 px-2 py-2 text-left font-semibold min-w-[140px]">Name</th>
-                  <th className="px-2 py-2 text-left font-semibold min-w-[90px]">Curriculum</th>
-                  <th className="px-2 py-2 text-left font-semibold min-w-[60px]">Grade</th>
-                  <th className="px-2 py-2 text-left font-semibold min-w-[120px]">Classroom</th>
-                  <th className="px-2 py-2 text-center font-semibold min-w-[80px]">Status</th>
+                <tr className="bg-primary/10">
+                  <th className="sticky left-0 z-[5] bg-primary/10 px-2 py-2 text-left font-semibold border border-border">Roll No</th>
+                  <th className="sticky left-[70px] z-[5] bg-primary/10 px-2 py-2 text-left font-semibold min-w-[140px] border border-border">Name</th>
+                  <th className="px-2 py-2 text-left font-semibold min-w-[90px] border border-border">Curriculum</th>
+                  <th className="px-2 py-2 text-left font-semibold min-w-[60px] border border-border">Grade</th>
+                  <th className="px-2 py-2 text-left font-semibold min-w-[120px] border border-border">Classroom</th>
+                  <th className="px-2 py-2 text-center font-semibold min-w-[80px] border border-border">Status</th>
                   {daysInMonth.map((d) => (
-                    <th key={d.toISOString()} className="px-1 py-2 text-center font-semibold min-w-[28px]">
+                    <th key={d.toISOString()} className="px-1 py-2 text-center font-semibold min-w-[28px] border border-border">
                       {format(d, "dd")}
                     </th>
                   ))}
-                  <th className="px-2 py-2 text-center font-semibold bg-success/10">P</th>
-                  <th className="px-2 py-2 text-center font-semibold bg-destructive/10">AB</th>
-                  <th className="px-2 py-2 text-center font-semibold bg-warning/10">L</th>
-                  <th className="px-2 py-2 text-center font-semibold bg-purple-600/10">H</th>
-                  
-                  <th className="px-2 py-2 text-center font-semibold">Total</th>
-                  <th className="px-2 py-2 text-center font-semibold">%</th>
+                  <th className="px-2 py-2 text-center font-semibold bg-success/10 border border-border">P</th>
+                  <th className="px-2 py-2 text-center font-semibold bg-destructive/10 border border-border">AB</th>
+                  <th className="px-2 py-2 text-center font-semibold bg-warning/10 border border-border">L</th>
+                  <th className="px-2 py-2 text-center font-semibold bg-purple-600/10 border border-border">H</th>
+                  <th className="px-2 py-2 text-center font-semibold border border-border">Total</th>
+                  <th className="px-2 py-2 text-center font-semibold border border-border">%</th>
                 </tr>
               </thead>
               <tbody>
