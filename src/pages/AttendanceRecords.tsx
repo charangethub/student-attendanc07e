@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ArrowLeft, Download, Search, BarChart3 } from "lucide-react";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, parse, getDaysInMonth } from "date-fns";
+import { ArrowLeft, Download, Search } from "lucide-react";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
 
 type Student = {
   id: string;
@@ -15,9 +15,10 @@ type Student = {
   grade: string;
   curriculum: string;
   classroom_name: string;
+  enrollment_status: string;
 };
 
-type AttendanceMap = Record<string, Record<string, string>>; // student_id -> date -> status
+type AttendanceMap = Record<string, Record<string, string>>;
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -31,6 +32,7 @@ const AttendanceRecords = () => {
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [classroomFilter, setClassroomFilter] = useState("all");
+  const [enrollmentFilter, setEnrollmentFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [students, setStudents] = useState<Student[]>([]);
   const [attendanceMap, setAttendanceMap] = useState<AttendanceMap>({});
@@ -58,8 +60,7 @@ const AttendanceRecords = () => {
     const [studentsRes, attendanceRes] = await Promise.all([
       supabase
         .from("students")
-        .select("id, roll_no, student_name, grade, curriculum, classroom_name")
-        .eq("enrollment_status", "ENROLLED")
+        .select("id, roll_no, student_name, grade, curriculum, classroom_name, enrollment_status")
         .order("roll_no"),
       supabase
         .from("attendance")
@@ -84,16 +85,22 @@ const AttendanceRecords = () => {
     [students]
   );
 
+  const enrollmentStatuses = useMemo(
+    () => [...new Set(students.map((s) => s.enrollment_status).filter(Boolean))].sort(),
+    [students]
+  );
+
   const filtered = useMemo(() => {
     return students.filter((s) => {
       if (classroomFilter !== "all" && s.classroom_name !== classroomFilter) return false;
+      if (enrollmentFilter !== "all" && s.enrollment_status !== enrollmentFilter) return false;
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
         return s.student_name.toLowerCase().includes(q) || s.roll_no.toLowerCase().includes(q);
       }
       return true;
     });
-  }, [students, classroomFilter, searchQuery]);
+  }, [students, classroomFilter, enrollmentFilter, searchQuery]);
 
   const getStudentStats = (studentId: string) => {
     const records = attendanceMap[studentId] || {};
@@ -114,14 +121,14 @@ const AttendanceRecords = () => {
       return;
     }
     const dateHeaders = daysInMonth.map((d) => format(d, "dd"));
-    const headers = ["Roll No", "Student Name", "Grade", "Curriculum", "Classroom", ...dateHeaders, "P", "AB", "L", "%"];
+    const headers = ["Roll No", "Student Name", "Curriculum", "Classroom", "Grade", "Enrollment Status", ...dateHeaders, "P", "AB", "L", "%"];
     const rows = filtered.map((s) => {
       const stats = getStudentStats(s.id);
       const dayStatuses = daysInMonth.map((d) => {
         const dateStr = format(d, "yyyy-MM-dd");
         return attendanceMap[s.id]?.[dateStr] || "";
       });
-      return [s.roll_no, s.student_name, s.grade, s.curriculum, s.classroom_name, ...dayStatuses, stats.p, stats.ab, stats.l, stats.pct + "%"];
+      return [s.roll_no, s.student_name, s.curriculum, s.classroom_name, s.grade, s.enrollment_status, ...dayStatuses, stats.p, stats.ab, stats.l, stats.pct + "%"];
     });
     const csv = [headers.join(","), ...rows.map((r) => r.map((c) => `"${c}"`).join(","))].join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
@@ -139,16 +146,11 @@ const AttendanceRecords = () => {
       {/* Header */}
       <div className="sticky top-0 z-10 border-b border-border bg-card px-4 py-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div>
-              <h1 className="text-lg font-bold text-foreground">Attendance Records</h1>
-              <p className="text-xs text-muted-foreground">
-                {MONTHS[selectedMonth]} {selectedYear} • {filtered.length} students
-              </p>
-            </div>
+          <div>
+            <h1 className="text-lg font-bold text-foreground">Attendance Records</h1>
+            <p className="text-xs text-muted-foreground">
+              {MONTHS[selectedMonth]} {selectedYear} • {filtered.length} students
+            </p>
           </div>
           <Button variant="outline" size="sm" onClick={exportCSV}>
             <Download className="mr-1 h-4 w-4" />
@@ -191,6 +193,17 @@ const AttendanceRecords = () => {
               ))}
             </SelectContent>
           </Select>
+          <Select value={enrollmentFilter} onValueChange={setEnrollmentFilter}>
+            <SelectTrigger className="w-44">
+              <SelectValue placeholder="All Enrollment" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Enrollment</SelectItem>
+              {enrollmentStatuses.map((s) => (
+                <SelectItem key={s} value={s}>{s}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -218,6 +231,9 @@ const AttendanceRecords = () => {
                 <tr className="border-b border-border bg-primary/10">
                   <th className="sticky left-0 z-[5] bg-primary/10 px-2 py-2 text-left font-semibold">Roll No</th>
                   <th className="sticky left-[70px] z-[5] bg-primary/10 px-2 py-2 text-left font-semibold min-w-[140px]">Name</th>
+                  <th className="px-2 py-2 text-left font-semibold min-w-[90px]">Curriculum</th>
+                  <th className="px-2 py-2 text-left font-semibold min-w-[120px]">Classroom</th>
+                  <th className="px-2 py-2 text-center font-semibold min-w-[80px]">Status</th>
                   {daysInMonth.map((d) => (
                     <th key={d.toISOString()} className="px-1 py-2 text-center font-semibold min-w-[28px]">
                       {format(d, "dd")}
@@ -232,6 +248,7 @@ const AttendanceRecords = () => {
               <tbody>
                 {filtered.map((s, idx) => {
                   const stats = getStudentStats(s.id);
+                  const isForfeited = s.enrollment_status?.toUpperCase() === "FORFEITED";
                   return (
                     <tr
                       key={s.id}
@@ -239,6 +256,17 @@ const AttendanceRecords = () => {
                     >
                       <td className="sticky left-0 z-[4] bg-inherit px-2 py-1.5 font-mono">{s.roll_no}</td>
                       <td className="sticky left-[70px] z-[4] bg-inherit px-2 py-1.5 font-medium truncate max-w-[140px]">{s.student_name}</td>
+                      <td className="px-2 py-1.5 text-muted-foreground">{s.curriculum}</td>
+                      <td className="px-2 py-1.5 text-muted-foreground">{s.classroom_name}</td>
+                      <td className="px-2 py-1.5 text-center">
+                        <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-bold ${
+                          isForfeited
+                            ? "bg-destructive/15 text-destructive"
+                            : "bg-success/15 text-success"
+                        }`}>
+                          {s.enrollment_status}
+                        </span>
+                      </td>
                       {daysInMonth.map((d) => {
                         const dateStr = format(d, "yyyy-MM-dd");
                         const status = attendanceMap[s.id]?.[dateStr] || "";
