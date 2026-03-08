@@ -42,7 +42,7 @@ const STATUS_OPTIONS = [
 ];
 
 const AttendanceDashboard = () => {
-  const { user } = useAuth();
+  const { user, userRole } = useAuth();
   const navigate = useNavigate();
   const [students, setStudents] = useState<Student[]>([]);
   const [attendance, setAttendance] = useState<Record<string, string>>({});
