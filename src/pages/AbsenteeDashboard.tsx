@@ -121,6 +121,15 @@ const AbsenteeDashboard = () => {
     
     if (!errorOccurred) {
       toast.success("Remarks saved successfully");
+      // Sync to Google Sheet
+      try {
+        await supabase.functions.invoke("sync-to-sheet", {
+          body: { date: selectedDate },
+        });
+        toast.success("Google Sheet synced");
+      } catch (e) {
+        console.error("Sheet sync error:", e);
+      }
     }
     setSavingRemarks(false);
   };
