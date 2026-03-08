@@ -1,4 +1,3 @@
-import vedantuLogo from "@/assets/vedantu-logo.png";
 import {
   LayoutDashboard,
   ClipboardCheck,
