@@ -15,8 +15,6 @@ import AdminPanel from "./pages/AdminPanel";
 import AttendanceDashboard from "./pages/AttendanceDashboard";
 import AbsenteeDashboard from "./pages/AbsenteeDashboard";
 import AttendanceRecords from "./pages/AttendanceRecords";
-import LeaveRequestForm from "./pages/LeaveRequestForm";
-import LeaveApprovals from "./pages/LeaveApprovals";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
