@@ -104,15 +104,17 @@ const AttendanceRecords = () => {
 
   const getStudentStats = (studentId: string) => {
     const records = attendanceMap[studentId] || {};
-    let p = 0, ab = 0, l = 0;
+    let p = 0, ab = 0, l = 0, h = 0;
     Object.values(records).forEach((s) => {
       if (s === "P") p++;
       else if (s === "AB") ab++;
       else if (s === "L") l++;
+      else if (s === "H") h++;
     });
-    const total = p + ab + l;
-    const pct = total > 0 ? Math.round((p / total) * 100) : 0;
-    return { p, ab, l, total, pct };
+    const totalDays = daysInMonth.length;
+    const workingDays = totalDays - h;
+    const pct = workingDays > 0 ? Math.round((p / workingDays) * 100) : 0;
+    return { p, ab, l, h, totalDays, workingDays, pct };
   };
 
   const exportCSV = () => {
@@ -121,14 +123,14 @@ const AttendanceRecords = () => {
       return;
     }
     const dateHeaders = daysInMonth.map((d) => format(d, "dd"));
-    const headers = ["Roll No", "Student Name", "Curriculum", "Classroom", "Grade", "Enrollment Status", ...dateHeaders, "P", "AB", "L", "%"];
+    const headers = ["Roll No", "Student Name", "Curriculum", "Classroom", "Grade", "Enrollment Status", ...dateHeaders, "P", "AB", "L", "H", "Working Days", "Total Days", "%"];
     const rows = filtered.map((s) => {
       const stats = getStudentStats(s.id);
       const dayStatuses = daysInMonth.map((d) => {
         const dateStr = format(d, "yyyy-MM-dd");
         return attendanceMap[s.id]?.[dateStr] || "";
       });
-      return [s.roll_no, s.student_name, s.curriculum, s.classroom_name, s.grade, s.enrollment_status, ...dayStatuses, stats.p, stats.ab, stats.l, stats.pct + "%"];
+      return [s.roll_no, s.student_name, s.curriculum, s.classroom_name, s.grade, s.enrollment_status, ...dayStatuses, stats.p, stats.ab, stats.l, stats.h, stats.workingDays, stats.totalDays, stats.pct + "%"];
     });
     const csv = [headers.join(","), ...rows.map((r) => r.map((c) => `"${c}"`).join(","))].join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
@@ -243,6 +245,9 @@ const AttendanceRecords = () => {
                   <th className="px-2 py-2 text-center font-semibold bg-success/10">P</th>
                   <th className="px-2 py-2 text-center font-semibold bg-destructive/10">AB</th>
                   <th className="px-2 py-2 text-center font-semibold bg-warning/10">L</th>
+                  <th className="px-2 py-2 text-center font-semibold bg-purple-600/10">H</th>
+                  <th className="px-2 py-2 text-center font-semibold">Working</th>
+                  <th className="px-2 py-2 text-center font-semibold">Total</th>
                   <th className="px-2 py-2 text-center font-semibold">%</th>
                 </tr>
               </thead>
@@ -281,6 +286,8 @@ const AttendanceRecords = () => {
                                     ? "bg-success/20 text-success"
                                     : status === "AB"
                                     ? "bg-destructive/20 text-destructive"
+                                    : status === "H"
+                                    ? "bg-purple-600/20 text-purple-600"
                                     : "bg-warning/20 text-warning"
                                 }`}
                               >
@@ -295,6 +302,9 @@ const AttendanceRecords = () => {
                       <td className="px-2 py-1.5 text-center font-bold text-success">{stats.p}</td>
                       <td className="px-2 py-1.5 text-center font-bold text-destructive">{stats.ab}</td>
                       <td className="px-2 py-1.5 text-center font-bold text-warning">{stats.l}</td>
+                      <td className="px-2 py-1.5 text-center font-bold text-purple-600">{stats.h}</td>
+                      <td className="px-2 py-1.5 text-center font-bold text-muted-foreground">{stats.workingDays}</td>
+                      <td className="px-2 py-1.5 text-center font-bold text-muted-foreground">{stats.totalDays}</td>
                       <td className={`px-2 py-1.5 text-center font-bold ${stats.pct >= 75 ? "text-success" : stats.pct >= 50 ? "text-warning" : "text-destructive"}`}>
                         {stats.pct}%
                       </td>
