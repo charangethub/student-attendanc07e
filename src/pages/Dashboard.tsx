@@ -114,6 +114,11 @@ const Dashboard = () => {
         <div className="mt-8">
           <DashboardAnalytics />
         </div>
+
+        {/* Monthly Statistics */}
+        <div className="mt-8 border-t border-border pt-8">
+          <MonthlyAnalytics />
+        </div>
       </main>
     </div>
   );
