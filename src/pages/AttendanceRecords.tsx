@@ -258,6 +258,7 @@ const AttendanceRecords = () => {
                       <td className="sticky left-0 z-[4] bg-inherit px-2 py-1.5 font-mono">{s.roll_no}</td>
                       <td className="sticky left-[70px] z-[4] bg-inherit px-2 py-1.5 font-medium truncate max-w-[140px]">{s.student_name}</td>
                       <td className="px-2 py-1.5 text-muted-foreground">{s.curriculum}</td>
+                      <td className="px-2 py-1.5 text-muted-foreground">{s.grade}</td>
                       <td className="px-2 py-1.5 text-muted-foreground">{s.classroom_name}</td>
                       <td className="px-2 py-1.5 text-center">
                         <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-bold ${
