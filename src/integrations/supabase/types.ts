@@ -52,6 +52,63 @@ export type Database = {
           },
         ]
       }
+      leave_requests: {
+        Row: {
+          classroom_name: string
+          created_at: string
+          email: string
+          grade: string
+          id: string
+          leave_end_date: string
+          leave_start_date: string
+          mobile_number: string
+          reason: string
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          roll_no: string
+          status: string
+          student_name: string
+          updated_at: string
+        }
+        Insert: {
+          classroom_name?: string
+          created_at?: string
+          email?: string
+          grade?: string
+          id?: string
+          leave_end_date: string
+          leave_start_date: string
+          mobile_number?: string
+          reason?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          roll_no?: string
+          status?: string
+          student_name: string
+          updated_at?: string
+        }
+        Update: {
+          classroom_name?: string
+          created_at?: string
+          email?: string
+          grade?: string
+          id?: string
+          leave_end_date?: string
+          leave_start_date?: string
+          mobile_number?: string
+          reason?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          roll_no?: string
+          status?: string
+          student_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       page_access: {
         Row: {
           has_access: boolean

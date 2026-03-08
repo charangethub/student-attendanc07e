@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { SidebarLayout } from "@/components/SidebarLayout";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -14,6 +15,8 @@ import AdminPanel from "./pages/AdminPanel";
 import AttendanceDashboard from "./pages/AttendanceDashboard";
 import AbsenteeDashboard from "./pages/AbsenteeDashboard";
 import AttendanceRecords from "./pages/AttendanceRecords";
+import LeaveRequestForm from "./pages/LeaveRequestForm";
+import LeaveApprovals from "./pages/LeaveApprovals";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,11 +34,14 @@ const App = () => (
             <Route path="/signup" element={<Signup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/leave-request" element={<LeaveRequestForm />} />
+
+            {/* Sidebar layout routes */}
             <Route
               path="/dashboard"
               element={
                 <ProtectedRoute>
-                  <Dashboard />
+                  <SidebarLayout><Dashboard /></SidebarLayout>
                 </ProtectedRoute>
               }
             />
@@ -43,7 +49,7 @@ const App = () => (
               path="/admin"
               element={
                 <ProtectedRoute requiredRole={["owner", "admin"]}>
-                  <AdminPanel />
+                  <SidebarLayout><AdminPanel /></SidebarLayout>
                 </ProtectedRoute>
               }
             />
@@ -51,7 +57,7 @@ const App = () => (
               path="/attendance"
               element={
                 <ProtectedRoute>
-                  <AttendanceDashboard />
+                  <SidebarLayout><AttendanceDashboard /></SidebarLayout>
                 </ProtectedRoute>
               }
             />
@@ -59,7 +65,7 @@ const App = () => (
               path="/absentees"
               element={
                 <ProtectedRoute>
-                  <AbsenteeDashboard />
+                  <SidebarLayout><AbsenteeDashboard /></SidebarLayout>
                 </ProtectedRoute>
               }
             />
@@ -67,7 +73,15 @@ const App = () => (
               path="/records"
               element={
                 <ProtectedRoute>
-                  <AttendanceRecords />
+                  <SidebarLayout><AttendanceRecords /></SidebarLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/leave-approvals"
+              element={
+                <ProtectedRoute>
+                  <SidebarLayout><LeaveApprovals /></SidebarLayout>
                 </ProtectedRoute>
               }
             />
