@@ -164,6 +164,22 @@ const AttendanceDashboard = () => {
     } else {
       toast.success(`Saved attendance for ${records.length} students`);
       fetchAttendance();
+
+      // Auto-sync to Google Sheet
+      try {
+        const { error: syncError } = await supabase.functions.invoke("sync-to-sheet", {
+          body: { date: selectedDate },
+        });
+        if (syncError) {
+          console.error("Sheet sync error:", syncError);
+          toast.error("Attendance saved but Google Sheet sync failed");
+        } else {
+          toast.success("Google Sheet synced successfully");
+        }
+      } catch (syncErr: any) {
+        console.error("Sheet sync error:", syncErr);
+        toast.error("Attendance saved but Google Sheet sync failed");
+      }
     }
     setSaving(false);
   };
