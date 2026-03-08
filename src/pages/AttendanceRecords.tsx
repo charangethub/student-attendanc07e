@@ -286,6 +286,8 @@ const AttendanceRecords = () => {
                                     ? "bg-success/20 text-success"
                                     : status === "AB"
                                     ? "bg-destructive/20 text-destructive"
+                                    : status === "H"
+                                    ? "bg-purple-600/20 text-purple-600"
                                     : "bg-warning/20 text-warning"
                                 }`}
                               >
