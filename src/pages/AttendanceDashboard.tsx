@@ -351,6 +351,13 @@ const AttendanceDashboard = () => {
         </div>
       </div>
 
+      {/* Past date warning */}
+      {isPastDate && !isOwner && (
+        <div className="mx-4 mt-2 rounded-md border border-warning/50 bg-warning/10 px-4 py-2 text-sm text-warning">
+          ⚠️ You cannot edit attendance for past dates. Only owners can modify past records.
+        </div>
+      )}
+
       {/* Student List */}
       <div className="px-4 py-2">
         {filteredStudents.length === 0 ? (
