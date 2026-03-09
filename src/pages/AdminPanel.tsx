@@ -18,6 +18,8 @@ const PAGE_OPTIONS = [
   "Attendance Records",
 ];
 
+const ROLE_OPTIONS = ["admin", "teacher"];
+
 interface UserData {
   user_id: string;
   full_name: string;
