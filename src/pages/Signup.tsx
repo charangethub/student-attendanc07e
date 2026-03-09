@@ -40,16 +40,16 @@ const Signup = () => {
       toast.error("Password must be at least 6 characters");
       return;
     }
-    setLoading(true);
+    setSubmitting(true);
     const { error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
       options: {
         data: { full_name: fullName.trim() },
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: `${window.location.origin}/login`,
       },
     });
-    setLoading(false);
+    setSubmitting(false);
     if (error) {
       toast.error(error.message);
     } else {
