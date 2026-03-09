@@ -178,7 +178,7 @@ const AttendanceDashboard = () => {
     }
 
     // Run upsert and delete operations in parallel
-    const promises: Promise<any>[] = [];
+    const promises: Promise<void>[] = [];
 
     if (recordsToUpsert.length > 0) {
       promises.push(
