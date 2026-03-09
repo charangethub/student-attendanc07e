@@ -128,10 +128,10 @@ const DailyAttendanceReport = () => {
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
         </div>
       ) : (
-        /* Report card styled like the reference */
-        <div className="mx-auto max-w-3xl rounded-xl border-2 border-primary bg-card shadow-lg print:shadow-none print:border print:rounded-none">
+        /* Bordered table report */
+        <div className="mx-auto max-w-3xl bg-card shadow-lg print:shadow-none">
           {/* Title header */}
-          <div className="border-b-2 border-primary bg-primary/5 px-6 py-4 text-center">
+          <div className="border-2 border-foreground bg-primary/5 px-6 py-4 text-center">
             <h1 className="text-xl font-extrabold tracking-wide text-primary uppercase">
               VEDANTU LEARNING CENTRE
             </h1>
@@ -141,50 +141,48 @@ const DailyAttendanceReport = () => {
             </p>
           </div>
 
-          {/* Table */}
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-primary/10 hover:bg-primary/10">
-                  <TableHead className="text-center font-bold text-primary uppercase text-xs tracking-wider">Batch</TableHead>
-                  <TableHead className="text-center font-bold text-primary uppercase text-xs tracking-wider">Strength</TableHead>
-                  <TableHead className="text-center font-bold text-primary uppercase text-xs tracking-wider">Present</TableHead>
-                  <TableHead className="text-center font-bold text-primary uppercase text-xs tracking-wider">Absent</TableHead>
-                  <TableHead className="text-center font-bold text-primary uppercase text-xs tracking-wider">%</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {reportData.rows.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
-                      No data for this date
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  reportData.rows.map((row, i) => (
-                    <TableRow key={row.batch} className={i % 2 === 0 ? "bg-card" : "bg-muted/30"}>
-                      <TableCell className="text-center font-semibold text-foreground text-sm">{row.batch}</TableCell>
-                      <TableCell className="text-center text-foreground">{row.strength}</TableCell>
-                      <TableCell className="text-center text-success font-semibold">{row.present}</TableCell>
-                      <TableCell className="text-center text-destructive font-semibold">{row.absent}</TableCell>
-                      <TableCell className="text-center font-semibold text-foreground">{row.pct.toFixed(2)}%</TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-              {reportData.rows.length > 0 && (
-                <TableFooter>
-                  <TableRow className="bg-primary/10 font-bold hover:bg-primary/10">
-                    <TableCell className="text-center text-primary text-sm uppercase">Total</TableCell>
-                    <TableCell className="text-center text-foreground">{reportData.totals.strength}</TableCell>
-                    <TableCell className="text-center text-success">{reportData.totals.present}</TableCell>
-                    <TableCell className="text-center text-destructive">{reportData.totals.absent}</TableCell>
-                    <TableCell className="text-center text-foreground">{reportData.totals.pct.toFixed(2)}%</TableCell>
-                  </TableRow>
-                </TableFooter>
+          {/* Bordered table */}
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="bg-primary/10">
+                <th className="border-2 border-foreground px-4 py-2.5 text-center text-xs font-bold uppercase tracking-wider text-primary">Batch</th>
+                <th className="border-2 border-foreground px-4 py-2.5 text-center text-xs font-bold uppercase tracking-wider text-primary">Strength</th>
+                <th className="border-2 border-foreground px-4 py-2.5 text-center text-xs font-bold uppercase tracking-wider text-primary">Present</th>
+                <th className="border-2 border-foreground px-4 py-2.5 text-center text-xs font-bold uppercase tracking-wider text-primary">Absent</th>
+                <th className="border-2 border-foreground px-4 py-2.5 text-center text-xs font-bold uppercase tracking-wider text-primary">%</th>
+              </tr>
+            </thead>
+            <tbody>
+              {reportData.rows.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="border-2 border-foreground py-8 text-center text-muted-foreground">
+                    No data for this date
+                  </td>
+                </tr>
+              ) : (
+                reportData.rows.map((row, i) => (
+                  <tr key={row.batch} className={i % 2 === 0 ? "bg-card" : "bg-muted/30"}>
+                    <td className="border-2 border-foreground px-4 py-2 text-center text-sm font-semibold text-foreground">{row.batch}</td>
+                    <td className="border-2 border-foreground px-4 py-2 text-center text-foreground">{row.strength}</td>
+                    <td className="border-2 border-foreground px-4 py-2 text-center font-semibold text-success">{row.present}</td>
+                    <td className="border-2 border-foreground px-4 py-2 text-center font-semibold text-destructive">{row.absent}</td>
+                    <td className="border-2 border-foreground px-4 py-2 text-center font-semibold text-foreground">{row.pct.toFixed(2)}%</td>
+                  </tr>
+                ))
               )}
-            </Table>
-          </div>
+            </tbody>
+            {reportData.rows.length > 0 && (
+              <tfoot>
+                <tr className="bg-primary/10 font-bold">
+                  <td className="border-2 border-foreground px-4 py-2.5 text-center text-sm uppercase text-primary">Total</td>
+                  <td className="border-2 border-foreground px-4 py-2.5 text-center text-foreground">{reportData.totals.strength}</td>
+                  <td className="border-2 border-foreground px-4 py-2.5 text-center text-success">{reportData.totals.present}</td>
+                  <td className="border-2 border-foreground px-4 py-2.5 text-center text-destructive">{reportData.totals.absent}</td>
+                  <td className="border-2 border-foreground px-4 py-2.5 text-center text-foreground">{reportData.totals.pct.toFixed(2)}%</td>
+                </tr>
+              </tfoot>
+            )}
+          </table>
         </div>
       )}
     </div>
