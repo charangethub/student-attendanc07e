@@ -11,12 +11,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { ArrowLeft, Crown, Plus, Save, Trash2, UserCheck } from "lucide-react";
 
-const PAGE_OPTIONS = [
-  "Dashboard",
-  "Mark Attendance",
-  "Absentee Report",
-  "Attendance Records",
-];
+import { PAGE_OPTIONS } from "@/config/pageOptions";
 
 const ROLE_OPTIONS = ["admin", "teacher"];
 
