@@ -43,8 +43,14 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, userRole, signOut } = useAuth();
+  const { user, userRole, userStatus, pageAccess, signOut } = useAuth();
   const [syncing, setSyncing] = useState(false);
+
+  const visibleMainItems = mainItems.filter((item) => {
+    if (userRole === "owner") return true;
+    if (userStatus !== "active") return false;
+    return pageAccess?.[item.title] ?? false;
+  });
 
   const handleSignOut = async () => {
     await signOut();
@@ -87,7 +93,7 @@ export function AppSidebar() {
           )}
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainItems.map((item) => (
+              {visibleMainItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink
