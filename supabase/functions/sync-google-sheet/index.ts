@@ -3,8 +3,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-const SHEET_CSV_URL =
-  'https://docs.google.com/spreadsheets/d/e/2PACX-1vQKYUpS_BgzI35ehk8rW__fB0f6ZFNv08mn7gY12OKEriycjUgFayjL0KXRm9yMrIT2KXyHe_g4m6YL/pub?gid=0&single=true&output=csv';
+const SHEET_CSV_URL = Deno.env.get('SHEET_CSV_URL') || '';
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
