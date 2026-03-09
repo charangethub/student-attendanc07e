@@ -4,14 +4,12 @@ import {
   ClipboardCheck,
   AlertTriangle,
   BarChart3,
-  FileText,
-  CheckSquare,
   Shield,
   LogOut,
   RefreshCw,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
