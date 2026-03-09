@@ -115,9 +115,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (accessError) {
       console.error("Failed to fetch page access:", accessError.message);
-    } else if (accessData) {
+      setPageAccess({});
+    } else {
       const accessMap: Record<string, boolean> = {};
-      accessData.forEach(item => {
+      (accessData ?? []).forEach((item) => {
         accessMap[item.page_name] = item.has_access;
       });
       setPageAccess(accessMap);
