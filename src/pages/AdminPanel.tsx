@@ -73,6 +73,12 @@ const AdminPanel = () => {
     setLoading(false);
   };
 
+  const handleRoleChange = (userId: string, newRole: string) => {
+    setUsers((prev) =>
+      prev.map((u) => (u.user_id === userId ? { ...u, role: newRole === "none" ? null : newRole } : u))
+    );
+  };
+
   const handleStatusChange = (userId: string, newStatus: string) => {
     setUsers((prev) =>
       prev.map((u) => (u.user_id === userId ? { ...u, status: newStatus } : u))
