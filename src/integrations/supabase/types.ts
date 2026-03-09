@@ -72,6 +72,7 @@ export type Database = {
           roll_no: string
           status: string
           student_name: string
+          submitted_by: string | null
           updated_at: string
         }
         Insert: {
@@ -90,6 +91,7 @@ export type Database = {
           roll_no?: string
           status?: string
           student_name: string
+          submitted_by?: string | null
           updated_at?: string
         }
         Update: {
@@ -108,6 +110,7 @@ export type Database = {
           roll_no?: string
           status?: string
           student_name?: string
+          submitted_by?: string | null
           updated_at?: string
         }
         Relationships: []
