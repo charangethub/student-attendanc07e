@@ -177,39 +177,51 @@ const AttendanceDashboard = () => {
       return;
     }
 
-    if (recordsToUpsert.length > 0) {
-      const { error: upsertError } = await supabase
-        .from("attendance")
-        .upsert(recordsToUpsert, { onConflict: "student_id,date" });
+    // Run upsert and delete operations in parallel
+    const promises: Promise<any>[] = [];
 
-      if (upsertError) {
-        toast.error("Failed to save: " + upsertError.message);
-        setSaving(false);
-        return;
-      }
+    if (recordsToUpsert.length > 0) {
+      promises.push(
+        supabase
+          .from("attendance")
+          .upsert(recordsToUpsert, { onConflict: "student_id,date" })
+          .then(({ error }) => {
+            if (error) throw new Error("Failed to save: " + error.message);
+          })
+      );
     }
 
     if (recordsToDelete.length > 0) {
+      // Batch deletes in parallel too
       for (let i = 0; i < recordsToDelete.length; i += 100) {
         const batch = recordsToDelete.slice(i, i + 100);
-        const { error: deleteError } = await supabase
-          .from("attendance")
-          .delete()
-          .eq("date", selectedDate)
-          .in("student_id", batch);
-
-        if (deleteError) {
-          toast.error("Failed to clear removed statuses: " + deleteError.message);
-          setSaving(false);
-          return;
-        }
+        promises.push(
+          supabase
+            .from("attendance")
+            .delete()
+            .eq("date", selectedDate)
+            .in("student_id", batch)
+            .then(({ error }) => {
+              if (error) throw new Error("Failed to clear: " + error.message);
+            })
+        );
       }
     }
 
+    try {
+      await Promise.all(promises);
+    } catch (err: any) {
+      toast.error(err.message);
+      setSaving(false);
+      return;
+    }
+
     toast.success(`Saved ${recordsToUpsert.length} updates and cleared ${recordsToDelete.length} records`);
-    await fetchAttendance();
-    await syncSheetForDate(selectedDate);
     setSaving(false);
+
+    // Fire-and-forget: refresh data and sync sheet in background
+    fetchAttendance();
+    syncSheetForDate(selectedDate);
   };
 
   const handleClearAll = async () => {
