@@ -108,6 +108,7 @@ Deno.serve(async (req) => {
     }
     
     console.log(`Sync triggered (cron: ${isCronCall})`);
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     console.log('Fetching Google Sheet CSV...');
     const csvResponse = await fetch(SHEET_CSV_URL);
