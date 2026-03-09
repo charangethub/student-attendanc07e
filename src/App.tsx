@@ -38,7 +38,7 @@ const App = () => (
             <Route
               path="/dashboard"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute pageName="Dashboard">
                   <SidebarLayout><Dashboard /></SidebarLayout>
                 </ProtectedRoute>
               }
@@ -54,7 +54,7 @@ const App = () => (
             <Route
               path="/attendance"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute pageName="Mark Attendance">
                   <SidebarLayout><AttendanceDashboard /></SidebarLayout>
                 </ProtectedRoute>
               }
@@ -62,7 +62,7 @@ const App = () => (
             <Route
               path="/absentees"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute pageName="Absentee Report">
                   <SidebarLayout><AbsenteeDashboard /></SidebarLayout>
                 </ProtectedRoute>
               }
@@ -70,7 +70,7 @@ const App = () => (
             <Route
               path="/records"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute pageName="Attendance Records">
                   <SidebarLayout><AttendanceRecords /></SidebarLayout>
                 </ProtectedRoute>
               }

@@ -8,6 +8,7 @@ interface AuthContextType {
   loading: boolean;
   userRole: string | null;
   userStatus: string | null;
+  pageAccess: Record<string, boolean>;
   signOut: () => Promise<void>;
 }
 
@@ -17,6 +18,7 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   userRole: null,
   userStatus: null,
+  pageAccess: {},
   signOut: async () => {},
 });
 
@@ -28,6 +30,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userStatus, setUserStatus] = useState<string | null>(null);
+  const [pageAccess, setPageAccess] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -38,6 +41,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         setUserRole(null);
         setUserStatus(null);
+        setPageAccess({});
       }
       setLoading(false);
     });
@@ -78,6 +82,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error("Failed to fetch user status:", statusError.message);
     }
     setUserStatus(statusData?.status ?? "pending");
+
+    const { data: accessData, error: accessError } = await supabase
+      .from("page_access")
+      .select("page_name, has_access")
+      .eq("user_id", userId);
+
+    if (accessError) {
+      console.error("Failed to fetch page access:", accessError.message);
+    } else if (accessData) {
+      const accessMap: Record<string, boolean> = {};
+      accessData.forEach(item => {
+        accessMap[item.page_name] = item.has_access;
+      });
+      setPageAccess(accessMap);
+    }
   };
 
   const signOut = async () => {
@@ -85,7 +104,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, userRole, userStatus, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, userRole, userStatus, pageAccess, signOut }}>
       {children}
     </AuthContext.Provider>
   );
