@@ -171,15 +171,24 @@ Deno.serve(async (req) => {
     console.log('Column indices:', JSON.stringify({
       rollNo: rollNoIdx, name: studentNameIdx, status: enrollmentStatusIdx, mobile: mobileIdx
     }));
-    console.log(`Found ${rows.length - 1} data rows`);
+    console.log(`Found ${rows.length - 1} parsed rows`);
 
     const students: any[] = [];
+    let skippedMissingRequired = 0;
+    const skippedSamples: Array<{ row: number; roll_no: string; student_name: string }> = [];
+
     for (let i = 1; i < rows.length; i++) {
       const cols = rows[i];
-      const rollNo = rollNoIdx >= 0 ? (cols[rollNoIdx] || '') : '';
-      const name = studentNameIdx >= 0 ? (cols[studentNameIdx] || '') : '';
+      const rollNo = rollNoIdx >= 0 ? (cols[rollNoIdx] || '').trim() : '';
+      const name = studentNameIdx >= 0 ? (cols[studentNameIdx] || '').trim() : '';
 
-      if (!rollNo || !name) continue;
+      if (!rollNo || !name) {
+        skippedMissingRequired++;
+        if (skippedSamples.length < 5) {
+          skippedSamples.push({ row: i + 1, roll_no: rollNo, student_name: name });
+        }
+        continue;
+      }
 
       students.push({
         zone: zoneIdx >= 0 ? cols[zoneIdx] || '' : '',
@@ -199,6 +208,10 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (skippedMissingRequired > 0) {
+      console.warn(`Skipped ${skippedMissingRequired} row(s) due to missing roll_no or student_name`, JSON.stringify(skippedSamples));
+    }
+
     // Upsert students by roll_no
     let synced = 0;
     for (const student of students) {
@@ -213,10 +226,10 @@ Deno.serve(async (req) => {
       }
     }
 
-    console.log(`Synced ${synced} students`);
+    console.log(`Prepared ${students.length} valid students, synced ${synced}`);
 
     return new Response(
-      JSON.stringify({ success: true, synced, total: students.length }),
+      JSON.stringify({ success: true, synced, total: students.length, skipped: skippedMissingRequired, skipped_samples: skippedSamples }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
