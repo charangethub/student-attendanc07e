@@ -18,6 +18,8 @@ const PAGE_OPTIONS = [
   "Attendance Records",
 ];
 
+const ROLE_OPTIONS = ["admin", "teacher"];
+
 interface UserData {
   user_id: string;
   full_name: string;
@@ -71,6 +73,12 @@ const AdminPanel = () => {
     setLoading(false);
   };
 
+  const handleRoleChange = (userId: string, newRole: string) => {
+    setUsers((prev) =>
+      prev.map((u) => (u.user_id === userId ? { ...u, role: newRole === "none" ? null : newRole } : u))
+    );
+  };
+
   const handleStatusChange = (userId: string, newStatus: string) => {
     setUsers((prev) =>
       prev.map((u) => (u.user_id === userId ? { ...u, status: newStatus } : u))
@@ -88,6 +96,20 @@ const AdminPanel = () => {
   };
 
   const handleSave = async (userData: UserData) => {
+    // Save role
+    if (userData.role) {
+      const { error: roleError } = await supabase
+        .from("user_roles")
+        .upsert({ user_id: userData.user_id, role: userData.role as any }, { onConflict: "user_id" });
+      if (roleError) {
+        toast.error("Failed to save role: " + roleError.message);
+        return;
+      }
+    } else {
+      // Remove role if set to "none"
+      await supabase.from("user_roles").delete().eq("user_id", userData.user_id);
+    }
+
     // Save status
     const { error: statusError } = await supabase
       .from("user_status")
@@ -200,6 +222,7 @@ const AdminPanel = () => {
               <tr className="bg-primary text-primary-foreground">
                 <th className="px-4 py-3 text-left text-sm font-semibold">Full Name</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold">Email</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold">Role</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold">Page Access</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold">Status</th>
                 <th className="px-4 py-3 text-right text-sm font-semibold">Actions</th>
@@ -217,7 +240,27 @@ const AdminPanel = () => {
                         {u.full_name || "—"}
                       </div>
                     </td>
-                    <td className="px-4 py-4 text-sm text-muted-foreground">{u.email}</td>
+                    <td className="px-4 py-4">
+                      {isOwner ? (
+                        <span className="inline-flex items-center rounded-full border border-primary px-3 py-1 text-xs font-medium text-primary">
+                          Owner
+                        </span>
+                      ) : (
+                        <Select value={u.role || "none"} onValueChange={(v) => handleRoleChange(u.user_id, v)}>
+                          <SelectTrigger className="w-28">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">No Role</SelectItem>
+                            {ROLE_OPTIONS.map((r) => (
+                              <SelectItem key={r} value={r}>
+                                {r.charAt(0).toUpperCase() + r.slice(1)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </td>
                     <td className="px-4 py-4">
                       {isOwner ? (
                         <span className="text-sm italic text-muted-foreground">All Access (Owner)</span>
