@@ -41,6 +41,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         setUserRole(null);
         setUserStatus(null);
+        setPageAccess({});
       }
       setLoading(false);
     });
