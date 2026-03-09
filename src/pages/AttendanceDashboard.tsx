@@ -182,28 +182,27 @@ const AttendanceDashboard = () => {
 
     if (recordsToUpsert.length > 0) {
       promises.push(
-        supabase
-          .from("attendance")
-          .upsert(recordsToUpsert, { onConflict: "student_id,date" })
-          .then(({ error }) => {
-            if (error) throw new Error("Failed to save: " + error.message);
-          })
+        (async () => {
+          const { error } = await supabase
+            .from("attendance")
+            .upsert(recordsToUpsert, { onConflict: "student_id,date" });
+          if (error) throw new Error("Failed to save: " + error.message);
+        })()
       );
     }
 
     if (recordsToDelete.length > 0) {
-      // Batch deletes in parallel too
       for (let i = 0; i < recordsToDelete.length; i += 100) {
         const batch = recordsToDelete.slice(i, i + 100);
         promises.push(
-          supabase
-            .from("attendance")
-            .delete()
-            .eq("date", selectedDate)
-            .in("student_id", batch)
-            .then(({ error }) => {
-              if (error) throw new Error("Failed to clear: " + error.message);
-            })
+          (async () => {
+            const { error } = await supabase
+              .from("attendance")
+              .delete()
+              .eq("date", selectedDate)
+              .in("student_id", batch);
+            if (error) throw new Error("Failed to clear: " + error.message);
+          })()
         );
       }
     }
