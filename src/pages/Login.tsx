@@ -29,6 +29,32 @@ const Login = () => {
       const message = error.message.toLowerCase().includes("email not confirmed")
         ? "Please verify your email before signing in. Check your inbox for the confirmation link."
         : error.message;
+      if (error.message.toLowerCase().includes("email not confirmed")) {
+        toast.error(
+          <div className="flex flex-col gap-2">
+            <span>{message}</span>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={async () => {
+                const { error: resendError } = await supabase.auth.resend({
+                  type: 'signup',
+                  email: email.trim(),
+                });
+                if (resendError) {
+                  toast.error("Failed to resend email: " + resendError.message);
+                } else {
+                  toast.success("Verification email resent! Please check your inbox.");
+                }
+              }}
+            >
+              Resend Verification Email
+            </Button>
+          </div>,
+          { duration: 5000 }
+        );
+        return;
+      }
       toast.error(message);
       return;
     }
