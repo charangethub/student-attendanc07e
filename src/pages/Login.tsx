@@ -30,9 +30,9 @@ const Login = () => {
       toast.error("Please fill in all fields");
       return;
     }
-    setLoading(true);
+    setSubmitting(true);
     const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-    setLoading(false);
+    setSubmitting(false);
     if (error) {
       const message = error.message.toLowerCase().includes("email not confirmed")
         ? "Please verify your email before signing in. Check your inbox for the confirmation link."
