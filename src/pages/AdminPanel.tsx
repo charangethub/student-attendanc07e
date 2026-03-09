@@ -240,7 +240,27 @@ const AdminPanel = () => {
                         {u.full_name || "—"}
                       </div>
                     </td>
-                    <td className="px-4 py-4 text-sm text-muted-foreground">{u.email}</td>
+                    <td className="px-4 py-4">
+                      {isOwner ? (
+                        <span className="inline-flex items-center rounded-full border border-primary px-3 py-1 text-xs font-medium text-primary">
+                          Owner
+                        </span>
+                      ) : (
+                        <Select value={u.role || "none"} onValueChange={(v) => handleRoleChange(u.user_id, v)}>
+                          <SelectTrigger className="w-28">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">No Role</SelectItem>
+                            {ROLE_OPTIONS.map((r) => (
+                              <SelectItem key={r} value={r}>
+                                {r.charAt(0).toUpperCase() + r.slice(1)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </td>
                     <td className="px-4 py-4">
                       {isOwner ? (
                         <span className="text-sm italic text-muted-foreground">All Access (Owner)</span>
