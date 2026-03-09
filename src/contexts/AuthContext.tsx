@@ -33,29 +33,54 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [pageAccess, setPageAccess] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        setTimeout(() => fetchUserData(session.user.id), 0);
+    let cancelled = false;
+
+    const applySession = async (nextSession: Session | null) => {
+      if (cancelled) return;
+
+      setSession(nextSession);
+      setUser(nextSession?.user ?? null);
+
+      if (nextSession?.user) {
+        await fetchUserData(nextSession.user.id);
       } else {
         setUserRole(null);
         setUserStatus(null);
         setPageAccess({});
       }
-      setLoading(false);
-    });
+    };
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchUserData(session.user.id);
+    // Initial session restore
+    setLoading(true);
+    supabase.auth
+      .getSession()
+      .then(async ({ data: { session } }) => {
+        try {
+          await applySession(session);
+        } finally {
+          if (!cancelled) setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    // Subsequent auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
+      setLoading(true);
+      try {
+        await applySession(nextSession);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-      setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const fetchUserData = async (userId: string) => {
@@ -90,9 +115,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (accessError) {
       console.error("Failed to fetch page access:", accessError.message);
-    } else if (accessData) {
+      setPageAccess({});
+    } else {
       const accessMap: Record<string, boolean> = {};
-      accessData.forEach(item => {
+      (accessData ?? []).forEach((item) => {
         accessMap[item.page_name] = item.has_access;
       });
       setPageAccess(accessMap);
