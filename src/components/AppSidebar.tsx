@@ -4,6 +4,7 @@ import {
   ClipboardCheck,
   AlertTriangle,
   BarChart3,
+  FileText,
   Shield,
   LogOut,
   RefreshCw,
