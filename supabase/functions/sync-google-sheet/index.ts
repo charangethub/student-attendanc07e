@@ -64,10 +64,22 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     
-    // Authorization: allow cron calls (Bearer <anon_key>) or authenticated owner/admin
+    // Authorization: allow trusted scheduler calls, otherwise require owner/admin
     const authHeader = req.headers.get('Authorization');
-    const token = authHeader?.replace('Bearer ', '') ?? '';
-    const isCronCall = token === anonKey;
+    const apikeyHeader = req.headers.get('apikey');
+    const userAgent = (req.headers.get('user-agent') || '').toLowerCase();
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.replace('Bearer ', '') : '';
+
+    // pg_net scheduler calls don't always forward Authorization reliably; accept scheduler calls by apikey + user-agent
+    const isSchedulerCall = apikeyHeader === anonKey && userAgent.includes('pg_net');
+    const isCronCall = token === anonKey || isSchedulerCall;
+
+    console.log('Auth context:', JSON.stringify({
+      hasAuthorization: !!authHeader,
+      hasApikey: !!apikeyHeader,
+      userAgent,
+      cron: isCronCall,
+    }));
     
     if (!isCronCall) {
       // Manual call — verify caller has owner or admin role
