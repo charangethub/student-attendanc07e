@@ -2,11 +2,15 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
+type PageAccessMap = Record<string, boolean>;
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
   userRole: string | null;
+  userStatus: string | null;
+  pageAccess: PageAccessMap | null;
   signOut: () => Promise<void>;
 }
 
@@ -15,6 +19,8 @@ const AuthContext = createContext<AuthContextType>({
   session: null,
   loading: true,
   userRole: null,
+  userStatus: null,
+  pageAccess: null,
   signOut: async () => {},
 });
 
@@ -25,46 +31,66 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [userStatus, setUserStatus] = useState<string | null>(null);
+  const [pageAccess, setPageAccess] = useState<PageAccessMap | null>(null);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        setTimeout(() => fetchUserRole(session.user.id), 0);
+    const clearMeta = () => {
+      setUserRole(null);
+      setUserStatus(null);
+      setPageAccess(null);
+    };
+
+    const fetchUserMeta = async (userId: string) => {
+      const [{ data: roleRow }, { data: statusRow }, { data: accessRows }] = await Promise.all([
+        supabase.from("user_roles").select("role").eq("user_id", userId).maybeSingle(),
+        supabase.from("user_status").select("status").eq("user_id", userId).maybeSingle(),
+        supabase.from("page_access").select("page_name,has_access").eq("user_id", userId),
+      ]);
+
+      setUserRole((roleRow as any)?.role ?? null);
+      setUserStatus((statusRow as any)?.status ?? null);
+
+      const map: PageAccessMap = {};
+      (accessRows ?? []).forEach((r: any) => {
+        map[String(r.page_name)] = !!r.has_access;
+      });
+      setPageAccess(map);
+    };
+
+    const hydrate = async (nextSession: Session | null) => {
+      setLoading(true);
+      setSession(nextSession);
+      setUser(nextSession?.user ?? null);
+
+      if (nextSession?.user) {
+        await fetchUserMeta(nextSession.user.id);
       } else {
-        setUserRole(null);
+        clearMeta();
       }
+
       setLoading(false);
+    };
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      void hydrate(nextSession);
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchUserRole(session.user.id);
-      }
-      setLoading(false);
+      void hydrate(session);
     });
 
     return () => subscription.unsubscribe();
   }, []);
-
-  const fetchUserRole = async (userId: string) => {
-    const { data } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId)
-      .maybeSingle();
-    setUserRole(data?.role ?? null);
-  };
 
   const signOut = async () => {
     await supabase.auth.signOut();
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, userRole, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, userRole, userStatus, pageAccess, signOut }}>
       {children}
     </AuthContext.Provider>
   );
