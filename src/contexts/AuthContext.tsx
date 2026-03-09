@@ -82,6 +82,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error("Failed to fetch user status:", statusError.message);
     }
     setUserStatus(statusData?.status ?? "pending");
+
+    const { data: accessData, error: accessError } = await supabase
+      .from("page_access")
+      .select("page_name, has_access")
+      .eq("user_id", userId);
+
+    if (accessError) {
+      console.error("Failed to fetch page access:", accessError.message);
+    } else if (accessData) {
+      const accessMap: Record<string, boolean> = {};
+      accessData.forEach(item => {
+        accessMap[item.page_name] = item.has_access;
+      });
+      setPageAccess(accessMap);
+    }
   };
 
   const signOut = async () => {
