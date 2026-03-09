@@ -51,10 +51,12 @@ const ProtectedRoute = ({ children, requiredRole, pageName }: ProtectedRouteProp
   }
 
   if (pageName && userRole !== "owner") {
-    if (!pageAccess[pageName] && Object.keys(pageAccess).length > 0) {
+    const allowed = pageAccess[pageName] === true;
+
+    if (!allowed) {
       // Find the first available page if this one is denied
       const availablePage = Object.entries(pageAccess).find(([_, hasAccess]) => hasAccess)?.[0];
-      
+
       if (!availablePage) {
         return (
           <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4 text-center">
@@ -71,15 +73,15 @@ const ProtectedRoute = ({ children, requiredRole, pageName }: ProtectedRouteProp
           </div>
         );
       }
-      
+
       // Navigate to the first available page
       const routes: Record<string, string> = {
-        "Dashboard": "/dashboard",
+        Dashboard: "/dashboard",
         "Mark Attendance": "/attendance",
         "Absentee Report": "/absentees",
-        "Attendance Records": "/records"
+        "Attendance Records": "/records",
       };
-      
+
       return <Navigate to={routes[availablePage] || "/dashboard"} replace />;
     }
   }

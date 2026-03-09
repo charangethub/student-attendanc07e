@@ -88,7 +88,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {mainItems
-                .filter(item => userRole === "owner" || pageAccess[item.title])
+                .filter((item) => userRole === "owner" || pageAccess[item.title] === true)
                 .map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
