@@ -113,11 +113,19 @@ const AdminPanel = () => {
 
   const handleDelete = async (userId: string) => {
     if (!confirm("Are you sure you want to remove this user?")) return;
-    // Remove roles, status, access (cascade will handle via auth.users if needed)
-    await supabase.from("user_roles").delete().eq("user_id", userId);
-    await supabase.from("page_access").delete().eq("user_id", userId);
-    await supabase.from("user_status").delete().eq("user_id", userId);
-    toast.success("User removed from admin panel");
+    
+    const { error: roleErr } = await supabase.from("user_roles").delete().eq("user_id", userId);
+    const { error: accessErr } = await supabase.from("page_access").delete().eq("user_id", userId);
+    const { error: statusErr } = await supabase.from("user_status").delete().eq("user_id", userId);
+    const { error: profileErr } = await supabase.from("profiles").delete().eq("user_id", userId);
+    
+    if (roleErr || accessErr || statusErr || profileErr) {
+      console.error(roleErr, accessErr, statusErr, profileErr);
+      toast.error("Failed to delete user completely. Please check permissions.");
+    } else {
+      toast.success("User removed from admin panel");
+    }
+    
     fetchUsers();
   };
 
