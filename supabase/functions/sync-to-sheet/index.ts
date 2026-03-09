@@ -11,14 +11,36 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders });
+    }
+
     const appsScriptUrl = Deno.env.get('GOOGLE_APPS_SCRIPT_URL');
     if (!appsScriptUrl) {
       throw new Error('GOOGLE_APPS_SCRIPT_URL is not configured');
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    
+    // Auth user check
+    const supabaseUserClient = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: authHeader } } });
+    const { data: { user }, error: userError } = await supabaseUserClient.auth.getUser();
+    
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders });
+    }
+
+    // Service client for DB operations
     const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+    // Role check
+    const { data: roleData } = await supabase.from('user_roles').select('role').eq('user_id', user.id).single();
+    if (!['owner', 'admin'].includes(roleData?.role)) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: corsHeaders });
+    }
 
     const { date } = await req.json();
     if (!date) throw new Error('date is required');
