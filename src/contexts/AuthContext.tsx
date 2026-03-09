@@ -8,6 +8,7 @@ interface AuthContextType {
   loading: boolean;
   userRole: string | null;
   userStatus: string | null;
+  pageAccess: Record<string, boolean>;
   signOut: () => Promise<void>;
 }
 
@@ -17,6 +18,7 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   userRole: null,
   userStatus: null,
+  pageAccess: {},
   signOut: async () => {},
 });
 
