@@ -84,6 +84,14 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/daily-report"
+              element={
+                <ProtectedRoute requiredPage="Daily Report">
+                  <SidebarLayout><DailyAttendanceReport /></SidebarLayout>
+                </ProtectedRoute>
+              }
+            />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
