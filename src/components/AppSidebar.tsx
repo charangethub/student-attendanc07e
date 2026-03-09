@@ -4,14 +4,12 @@ import {
   ClipboardCheck,
   AlertTriangle,
   BarChart3,
-  FileText,
-  CheckSquare,
   Shield,
   LogOut,
   RefreshCw,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,10 +39,15 @@ const mainItems = [
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const location = useLocation();
   const navigate = useNavigate();
-  const { user, userRole, signOut } = useAuth();
+  const { user, userRole, userStatus, pageAccess, signOut } = useAuth();
   const [syncing, setSyncing] = useState(false);
+
+  const visibleMainItems = mainItems.filter((item) => {
+    if (userRole === "owner") return true;
+    if (userStatus !== "active") return false;
+    return pageAccess?.[item.title] ?? false;
+  });
 
   const handleSignOut = async () => {
     await signOut();
@@ -87,7 +90,7 @@ export function AppSidebar() {
           )}
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainItems.map((item) => (
+              {visibleMainItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink

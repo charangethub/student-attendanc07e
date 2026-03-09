@@ -4,10 +4,11 @@ import { Navigate } from "react-router-dom";
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requiredRole?: string[];
+  requiredPage?: string;
 }
 
-const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
-  const { user, loading, userRole } = useAuth();
+const ProtectedRoute = ({ children, requiredRole, requiredPage }: ProtectedRouteProps) => {
+  const { user, loading, userRole, userStatus, pageAccess } = useAuth();
 
   if (loading) {
     return (
@@ -21,8 +22,20 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
     return <Navigate to="/login" replace />;
   }
 
-  if (requiredRole && userRole && !requiredRole.includes(userRole)) {
-    return <Navigate to="/dashboard" replace />;
+  if (requiredRole) {
+    if (!userRole) return <Navigate to="/dashboard" replace />;
+    if (!requiredRole.includes(userRole)) return <Navigate to="/dashboard" replace />;
+  }
+
+  if (requiredPage) {
+    // Owners can always access
+    if (userRole !== "owner") {
+      // No role or not approved => block
+      if (!userRole) return <Navigate to="/dashboard" replace />;
+      if (userStatus !== "active") return <Navigate to="/dashboard" replace />;
+      const hasAccess = pageAccess?.[requiredPage] ?? false;
+      if (!hasAccess) return <Navigate to="/dashboard" replace />;
+    }
   }
 
   return <>{children}</>;
