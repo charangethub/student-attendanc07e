@@ -43,7 +43,7 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, userRole, signOut, pageAccess } = useAuth();
+  const { user, userRole, signOut } = useAuth();
   const [syncing, setSyncing] = useState(false);
 
   const handleSignOut = async () => {
@@ -87,9 +87,7 @@ export function AppSidebar() {
           )}
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainItems
-                .filter((item) => userRole === "owner" || pageAccess[item.title] === true)
-                .map((item) => (
+              {mainItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink
