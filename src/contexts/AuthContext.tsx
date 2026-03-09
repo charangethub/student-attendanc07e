@@ -7,6 +7,7 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   userRole: string | null;
+  userStatus: string | null;
   signOut: () => Promise<void>;
 }
 
@@ -15,6 +16,7 @@ const AuthContext = createContext<AuthContextType>({
   session: null,
   loading: true,
   userRole: null,
+  userStatus: null,
   signOut: async () => {},
 });
 
@@ -25,15 +27,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [userStatus, setUserStatus] = useState<string | null>(null);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        setTimeout(() => fetchUserRole(session.user.id), 0);
+        setTimeout(() => fetchUserData(session.user.id), 0);
       } else {
         setUserRole(null);
+        setUserStatus(null);
       }
       setLoading(false);
     });
@@ -42,7 +46,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchUserRole(session.user.id);
+        fetchUserData(session.user.id);
       }
       setLoading(false);
     });
@@ -50,21 +54,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchUserRole = async (userId: string) => {
-    const { data, error } = await supabase
+  const fetchUserData = async (userId: string) => {
+    const { data: roleData, error: roleError } = await supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", userId)
       .limit(1)
       .maybeSingle();
 
-    if (error) {
-      console.error("Failed to fetch user role:", error.message);
-      setUserRole(null);
-      return;
+    if (roleError) {
+      console.error("Failed to fetch user role:", roleError.message);
     }
+    setUserRole(roleData?.role ?? null);
 
-    setUserRole(data?.role ?? null);
+    const { data: statusData, error: statusError } = await supabase
+      .from("user_status")
+      .select("status")
+      .eq("user_id", userId)
+      .limit(1)
+      .maybeSingle();
+
+    if (statusError) {
+      console.error("Failed to fetch user status:", statusError.message);
+    }
+    setUserStatus(statusData?.status ?? "pending");
   };
 
   const signOut = async () => {
