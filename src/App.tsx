@@ -33,7 +33,14 @@ const App = () => (
             <Route path="/signup" element={<Signup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            
+            <Route
+              path="/pending-approval"
+              element={
+                <ProtectedRoute>
+                  <PendingApproval />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Sidebar layout routes */}
             <Route
