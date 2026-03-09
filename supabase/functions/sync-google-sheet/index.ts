@@ -64,44 +64,51 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     
-    // Authorization check - verify caller has owner or admin role
+    // Authorization: allow cron calls (Bearer <anon_key>) or authenticated owner/admin
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
-        status: 401, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    const token = authHeader?.replace('Bearer ', '') ?? '';
+    const isCronCall = token === anonKey;
+    
+    if (!isCronCall) {
+      // Manual call — verify caller has owner or admin role
+      if (!authHeader?.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
+          status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        });
+      }
+      
+      const authClient = createClient(supabaseUrl, anonKey, {
+        global: { headers: { Authorization: authHeader } }
       });
+      
+      const { data: claims, error: claimsError } = await authClient.auth.getClaims(token);
+      if (claimsError || !claims?.claims?.sub) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
+          status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        });
+      }
+      
+      const userId = claims.claims.sub;
+      const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+      
+      const { data: roleRow } = await supabaseAdmin
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .maybeSingle();
+      
+      if (!roleRow || !['owner', 'admin'].includes(roleRow.role)) {
+        return new Response(JSON.stringify({ error: 'Forbidden - requires owner or admin role' }), { 
+          status: 403, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        });
+      }
     }
     
-    const authClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } }
-    });
-    
-    const token = authHeader.replace('Bearer ', '');
-    const { data: claims, error: claimsError } = await authClient.auth.getClaims(token);
-    if (claimsError || !claims?.claims?.sub) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
-        status: 401, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      });
-    }
-    
-    const userId = claims.claims.sub;
+    console.log(`Sync triggered (cron: ${isCronCall})`);
     const supabase = createClient(supabaseUrl, serviceRoleKey);
-    
-    // Verify caller has owner or admin role
-    const { data: roleRow } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId)
-      .maybeSingle();
-    
-    if (!roleRow || !['owner', 'admin'].includes(roleRow.role)) {
-      return new Response(JSON.stringify({ error: 'Forbidden - requires owner or admin role' }), { 
-        status: 403, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      });
-    }
 
     console.log('Fetching Google Sheet CSV...');
     const csvResponse = await fetch(SHEET_CSV_URL);
