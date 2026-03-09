@@ -126,8 +126,8 @@ const Signup = () => {
                 required
               />
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Creating account..." : "Sign Up"}
+            <Button type="submit" className="w-full" disabled={submitting}>
+              {submitting ? "Creating account..." : "Sign Up"}
             </Button>
           </form>
 
