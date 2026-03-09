@@ -6,10 +6,11 @@ import { supabase } from "@/integrations/supabase/client";
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requiredRole?: string[];
+  pageName?: string;
 }
 
-const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
-  const { user, loading, userRole, userStatus } = useAuth();
+const ProtectedRoute = ({ children, requiredRole, pageName }: ProtectedRouteProps) => {
+  const { user, loading, userRole, userStatus, pageAccess } = useAuth();
 
   if (loading) {
     return (
