@@ -68,16 +68,18 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get('Authorization');
     const apikeyHeader = req.headers.get('apikey');
     const userAgent = (req.headers.get('user-agent') || '').toLowerCase();
+    const cronSourceHeader = req.headers.get('x-sync-source');
     const token = authHeader?.startsWith('Bearer ') ? authHeader.replace('Bearer ', '') : '';
 
-    // pg_net scheduler calls don't always forward Authorization reliably; accept scheduler calls by apikey + user-agent
-    const isSchedulerCall = apikeyHeader === anonKey && userAgent.includes('pg_net');
+    // Trusted scheduler signal: pg_net user-agent + private cron marker header
+    const isSchedulerCall = userAgent.includes('pg_net') && cronSourceHeader === 'pg_cron_sync';
     const isCronCall = token === anonKey || isSchedulerCall;
 
     console.log('Auth context:', JSON.stringify({
       hasAuthorization: !!authHeader,
       hasApikey: !!apikeyHeader,
       userAgent,
+      hasCronHeader: !!cronSourceHeader,
       cron: isCronCall,
     }));
     
