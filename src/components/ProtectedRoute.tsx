@@ -1,5 +1,5 @@
 import { useAuth } from "@/contexts/AuthContext";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -9,6 +9,7 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute = ({ children, requiredRole, requiredPage }: ProtectedRouteProps) => {
   const { user, loading, userRole, userStatus, pageAccess } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -22,15 +23,31 @@ const ProtectedRoute = ({ children, requiredRole, requiredPage }: ProtectedRoute
     return <Navigate to="/login" replace />;
   }
 
+  const isOnPendingPage = location.pathname === "/pending-approval";
+  const isApproved = userRole && userStatus === "active";
+
+  // Owners always approved
+  const isOwner = userRole === "owner";
+
+  // If user is NOT approved and NOT owner, redirect to pending page (unless already there)
+  if (!isOwner && !isApproved && !isOnPendingPage) {
+    return <Navigate to="/pending-approval" replace />;
+  }
+
+  // If user IS approved/owner but on pending page, redirect to dashboard
+  if ((isOwner || isApproved) && isOnPendingPage) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  // Role-based check
   if (requiredRole) {
     if (!userRole) return <Navigate to="/dashboard" replace />;
     if (!requiredRole.includes(userRole)) return <Navigate to="/dashboard" replace />;
   }
 
+  // Page-access check
   if (requiredPage) {
-    // Owners can always access
     if (userRole !== "owner") {
-      // No role or not approved => block
       if (!userRole) return <Navigate to="/dashboard" replace />;
       if (userStatus !== "active") return <Navigate to="/dashboard" replace />;
       const hasAccess = pageAccess?.[requiredPage] ?? false;
