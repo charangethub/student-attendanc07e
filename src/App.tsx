@@ -16,6 +16,7 @@ import AdminPanel from "./pages/AdminPanel";
 import AttendanceDashboard from "./pages/AttendanceDashboard";
 import AbsenteeDashboard from "./pages/AbsenteeDashboard";
 import AttendanceRecords from "./pages/AttendanceRecords";
+import DailyAttendanceReport from "./pages/DailyAttendanceReport";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -80,6 +81,14 @@ const App = () => (
               element={
                 <ProtectedRoute requiredPage="Attendance Records">
                   <SidebarLayout><AttendanceRecords /></SidebarLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/daily-report"
+              element={
+                <ProtectedRoute requiredPage="Daily Report">
+                  <SidebarLayout><DailyAttendanceReport /></SidebarLayout>
                 </ProtectedRoute>
               }
             />

@@ -4,6 +4,7 @@ import {
   ClipboardCheck,
   AlertTriangle,
   BarChart3,
+  FileText,
   Shield,
   LogOut,
   RefreshCw,
@@ -34,6 +35,7 @@ const mainItems = [
   { title: "Mark Attendance", url: "/attendance", icon: ClipboardCheck },
   { title: "Absentee Report", url: "/absentees", icon: AlertTriangle },
   { title: "Attendance Records", url: "/records", icon: BarChart3 },
+  { title: "Daily Report", url: "/daily-report", icon: FileText },
 ];
 
 export function AppSidebar() {
