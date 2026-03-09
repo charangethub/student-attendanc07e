@@ -39,7 +39,6 @@ const mainItems = [
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const location = useLocation();
   const navigate = useNavigate();
   const { user, userRole, userStatus, pageAccess, signOut } = useAuth();
   const [syncing, setSyncing] = useState(false);
