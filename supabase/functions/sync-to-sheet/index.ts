@@ -18,7 +18,46 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    
+    // Authorization check - verify caller has owner or admin role
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
+        status: 401, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
+    }
+    
+    const authClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+    
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claims, error: claimsError } = await authClient.auth.getClaims(token);
+    if (claimsError || !claims?.claims?.sub) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
+        status: 401, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
+    }
+    
+    const userId = claims.claims.sub;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
+    
+    // Verify caller has owner or admin role
+    const { data: roleRow } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .maybeSingle();
+    
+    if (!roleRow || !['owner', 'admin'].includes(roleRow.role)) {
+      return new Response(JSON.stringify({ error: 'Forbidden - requires owner or admin role' }), { 
+        status: 403, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
+    }
 
     const { date } = await req.json();
     if (!date) throw new Error('date is required');
