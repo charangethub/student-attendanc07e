@@ -5,9 +5,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import {
-  ArrowLeft, CalendarDays, Check, X, Clock, Save, RefreshCw, Search, Trash2,
+  ArrowLeft, CalendarDays, Save, RefreshCw, Search, Trash2, LayoutGrid, Table,
 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -36,10 +37,10 @@ type AttendanceRecord = {
 };
 
 const STATUS_OPTIONS = [
-  { value: "P", label: "P", color: "bg-success text-success-foreground" },
-  { value: "AB", label: "AB", color: "bg-destructive text-destructive-foreground" },
-  { value: "L", label: "L", color: "bg-warning text-warning-foreground" },
-  { value: "H", label: "H", color: "bg-purple-600 text-white" },
+  { value: "P", label: "P", color: "bg-success text-success-foreground", border: "border-success" },
+  { value: "AB", label: "AB", color: "bg-destructive text-destructive-foreground", border: "border-destructive" },
+  { value: "L", label: "L", color: "bg-warning text-warning-foreground", border: "border-warning" },
+  { value: "H", label: "H", color: "bg-purple-600 text-white", border: "border-purple-600" },
 ];
 
 const AttendanceDashboard = () => {
@@ -56,6 +57,16 @@ const AttendanceDashboard = () => {
   const [saving, setSaving] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [clearing, setClearing] = useState(false);
+  const [viewMode, setViewMode] = useState<"card" | "table">(() => {
+    const saved = localStorage.getItem("attendance-view-mode");
+    if (saved === "card" || saved === "table") return saved;
+    return window.innerWidth < 768 ? "card" : "table";
+  });
+  const [showUnmarkedOnly, setShowUnmarkedOnly] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem("attendance-view-mode", viewMode);
+  }, [viewMode]);
 
   useEffect(() => {
     fetchStudents();
@@ -108,6 +119,7 @@ const AttendanceDashboard = () => {
     return students.filter((s) => {
       if (classroomFilter !== "all" && s.classroom_name !== classroomFilter) return false;
       if (gradeFilter !== "all" && s.grade !== gradeFilter) return false;
+      if (showUnmarkedOnly && attendance[s.id]) return false;
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
         return (
@@ -117,17 +129,7 @@ const AttendanceDashboard = () => {
       }
       return true;
     });
-  }, [students, classroomFilter, gradeFilter, searchQuery]);
-
-  const handleStatusToggle = (studentId: string) => {
-    const current = attendance[studentId] || "";
-    const order = ["P", "AB", "L", ""];
-    const nextIdx = (order.indexOf(current) + 1) % order.length;
-    setAttendance((prev) => ({
-      ...prev,
-      [studentId]: order[nextIdx],
-    }));
-  };
+  }, [students, classroomFilter, gradeFilter, searchQuery, showUnmarkedOnly, attendance]);
 
   const handleSetAll = (status: string) => {
     const map: Record<string, string> = { ...attendance };
@@ -144,13 +146,9 @@ const AttendanceDashboard = () => {
       });
       if (syncError) {
         console.error("Sheet sync error:", syncError);
-        toast.error("Saved, but Google Sheet sync failed");
-      } else {
-        toast.success("Google Sheet synced successfully");
       }
     } catch (syncErr: any) {
       console.error("Sheet sync error:", syncErr);
-      toast.error("Saved, but Google Sheet sync failed");
     }
   };
 
@@ -177,7 +175,6 @@ const AttendanceDashboard = () => {
       return;
     }
 
-    // Run upsert and delete operations in parallel
     const promises: Promise<void>[] = [];
 
     if (recordsToUpsert.length > 0) {
@@ -215,10 +212,8 @@ const AttendanceDashboard = () => {
       return;
     }
 
-    toast.success(`Saved ${recordsToUpsert.length} updates and cleared ${recordsToDelete.length} records`);
+    toast.success(`Saved ${recordsToUpsert.length} updates`);
     setSaving(false);
-
-    // Fire-and-forget: refresh data and sync sheet in background
     fetchAttendance();
     syncSheetForDate(selectedDate);
   };
@@ -228,7 +223,6 @@ const AttendanceDashboard = () => {
     setClearing(true);
     const studentIds = filteredStudents.map((s) => s.id);
     
-    // Delete in batches of 100
     for (let i = 0; i < studentIds.length; i += 100) {
       const batch = studentIds.slice(i, i + 100);
       const { error } = await supabase
@@ -243,7 +237,6 @@ const AttendanceDashboard = () => {
       }
     }
     
-    // Clear local state for filtered students
     setAttendance((prev) => {
       const updated = { ...prev };
       studentIds.forEach((id) => delete updated[id]);
@@ -251,9 +244,9 @@ const AttendanceDashboard = () => {
     });
     setExistingRecords((prev) => prev.filter((r) => !studentIds.includes(r.student_id)));
     
-    await syncSheetForDate(selectedDate);
-    await fetchAttendance();
-    toast.success(`Cleared attendance for ${studentIds.length} students on ${format(new Date(selectedDate), "dd MMM yyyy")}`);
+    syncSheetForDate(selectedDate);
+    fetchAttendance();
+    toast.success(`Cleared attendance for ${studentIds.length} students`);
     setClearing(false);
   };
 
@@ -278,7 +271,19 @@ const AttendanceDashboard = () => {
   const presentCount = filteredStudents.filter((s) => attendance[s.id] === "P").length;
   const absentCount = filteredStudents.filter((s) => attendance[s.id] === "AB").length;
   const leaveCount = filteredStudents.filter((s) => attendance[s.id] === "L").length;
-  const unmarkedCount = filteredStudents.filter((s) => !attendance[s.id]).length;
+  const markedCount = filteredStudents.filter((s) => attendance[s.id]).length;
+  const unmarkedCount = filteredStudents.length - markedCount;
+  const progressPct = filteredStudents.length > 0 ? (markedCount / filteredStudents.length) * 100 : 0;
+
+  // Check for unsaved changes
+  const hasUnsavedChanges = useMemo(() => {
+    const existingMap: Record<string, string> = {};
+    existingRecords.forEach((r) => { existingMap[r.student_id] = r.status; });
+    return Object.entries(attendance).some(([id, status]) => {
+      if (status && existingMap[id] !== status) return true;
+      return false;
+    }) || existingRecords.some((r) => !attendance[r.student_id]);
+  }, [attendance, existingRecords]);
 
   if (loading) {
     return (
@@ -289,7 +294,7 @@ const AttendanceDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <div className="sticky top-0 z-10 border-b border-border bg-card px-4 py-3">
         <div className="flex items-center justify-between">
@@ -315,7 +320,7 @@ const AttendanceDashboard = () => {
                   <AlertDialogTitle>Clear Attendance?</AlertDialogTitle>
                   <AlertDialogDescription>
                     This will delete all attendance records for {filteredStudents.length} filtered students on{" "}
-                    <strong>{format(new Date(selectedDate), "dd MMM yyyy")}</strong>. You can then re-mark attendance.
+                    <strong>{format(new Date(selectedDate), "dd MMM yyyy")}</strong>.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -330,10 +335,21 @@ const AttendanceDashboard = () => {
               <RefreshCw className={`mr-1 h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
               {syncing ? "Syncing..." : "Sync Sheet"}
             </Button>
-            <Button size="sm" onClick={handleSave} disabled={saving || !canEdit}>
-              <Save className="mr-1 h-4 w-4" />
-              {saving ? "Saving..." : "Save All"}
-            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Progress Bar */}
+      <div className="sticky top-[57px] z-10 border-b border-border bg-card/95 backdrop-blur px-4 py-2">
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-medium text-foreground whitespace-nowrap">
+            Marked: {markedCount} / {filteredStudents.length}
+          </span>
+          <Progress value={progressPct} className="flex-1 h-2.5" />
+          <div className="flex items-center gap-3 text-xs font-medium">
+            <span className="text-success">P:{presentCount}</span>
+            <span className="text-destructive">AB:{absentCount}</span>
+            <span className="text-warning">L:{leaveCount}</span>
           </div>
         </div>
       </div>
@@ -383,26 +399,38 @@ const AttendanceDashboard = () => {
           </div>
         </div>
 
-        {/* Quick actions & stats */}
-        <div className="mt-3 flex flex-wrap items-center gap-3">
+        {/* Quick actions */}
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <Button
+            variant={showUnmarkedOnly ? "default" : "outline"}
+            size="sm"
+            className="text-xs"
+            onClick={() => setShowUnmarkedOnly(!showUnmarkedOnly)}
+          >
+            {showUnmarkedOnly ? `Unmarked (${unmarkedCount})` : "Show Unmarked Only"}
+          </Button>
+          <div className="h-4 w-px bg-border" />
           <span className="text-xs font-medium text-muted-foreground">Mark all:</span>
-          {STATUS_OPTIONS.map((opt) => (
-            <Button
-              key={opt.value}
-              variant="outline"
-              size="sm"
-              onClick={() => handleSetAll(opt.value)}
-              className="text-xs"
-              disabled={!canEdit}
+          <Button variant="outline" size="sm" onClick={() => handleSetAll("P")} className="text-xs bg-success/10 hover:bg-success/20 text-success border-success/30" disabled={!canEdit}>
+            ✓ All Present
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => handleSetAll("AB")} className="text-xs bg-destructive/10 hover:bg-destructive/20 text-destructive border-destructive/30" disabled={!canEdit}>
+            ✗ All Absent
+          </Button>
+          <div className="h-4 w-px bg-border" />
+          <div className="ml-auto flex items-center gap-1 rounded-lg border border-border p-0.5">
+            <button
+              onClick={() => setViewMode("card")}
+              className={`rounded px-2 py-1 text-xs transition-colors ${viewMode === "card" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
             >
-              All {opt.label}
-            </Button>
-          ))}
-          <div className="ml-auto flex items-center gap-4 text-xs font-medium">
-            <span className="text-success">P: {presentCount}</span>
-            <span className="text-destructive">AB: {absentCount}</span>
-            <span className="text-warning">L: {leaveCount}</span>
-            <span className="text-muted-foreground">Unmarked: {unmarkedCount}</span>
+              <LayoutGrid className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setViewMode("table")}
+              className={`rounded px-2 py-1 text-xs transition-colors ${viewMode === "table" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              <Table className="h-4 w-4" />
+            </button>
           </div>
         </div>
       </div>
@@ -422,7 +450,57 @@ const AttendanceDashboard = () => {
               ? "No students found. Click 'Sync Sheet' to import from Google Sheets."
               : "No students match the current filters."}
           </div>
+        ) : viewMode === "card" ? (
+          /* Card View */
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {filteredStudents.map((s) => {
+              const status = attendance[s.id] || "";
+              const statusOpt = STATUS_OPTIONS.find((o) => o.value === status);
+              return (
+                <div
+                  key={s.id}
+                  className={`rounded-xl border-2 bg-card p-3 transition-all ${
+                    statusOpt ? statusOpt.border : "border-border"
+                  }`}
+                >
+                  <div className="mb-2 flex items-start justify-between">
+                    <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+                      {s.roll_no}
+                    </span>
+                  </div>
+                  <p className="mb-1 text-sm font-semibold text-foreground line-clamp-2 leading-tight">
+                    {s.student_name}
+                  </p>
+                  <p className="mb-3 text-[11px] text-muted-foreground truncate">
+                    {s.grade && `Grade ${s.grade}`} · {s.classroom_name}
+                  </p>
+                  <div className="grid grid-cols-4 gap-1">
+                    {STATUS_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        disabled={!canEdit}
+                        onClick={() =>
+                          setAttendance((prev) => ({
+                            ...prev,
+                            [s.id]: prev[s.id] === opt.value ? "" : opt.value,
+                          }))
+                        }
+                        className={`rounded-lg py-2 text-xs font-bold transition-all ${
+                          status === opt.value
+                            ? opt.color
+                            : "bg-muted text-muted-foreground hover:bg-muted/80"
+                        } ${!canEdit ? "opacity-50 cursor-not-allowed" : ""}`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         ) : (
+          /* Table View */
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -432,14 +510,12 @@ const AttendanceDashboard = () => {
                   <th className="px-3 py-2 text-left text-xs font-semibold text-foreground">Grade</th>
                   <th className="px-3 py-2 text-left text-xs font-semibold text-foreground">Curriculum</th>
                   <th className="px-3 py-2 text-left text-xs font-semibold text-foreground">Classroom</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-foreground">Enrollment</th>
                   <th className="px-3 py-2 text-center text-xs font-semibold text-foreground">Attendance</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredStudents.map((s, idx) => {
                   const status = attendance[s.id] || "";
-                  const statusOpt = STATUS_OPTIONS.find((o) => o.value === status);
                   return (
                     <tr
                       key={s.id}
@@ -450,7 +526,6 @@ const AttendanceDashboard = () => {
                       <td className="px-3 py-2 text-xs text-muted-foreground">{s.grade}</td>
                       <td className="px-3 py-2 text-xs text-muted-foreground">{s.curriculum}</td>
                       <td className="px-3 py-2 text-xs text-muted-foreground max-w-[200px] truncate">{s.classroom_name}</td>
-                      <td className="px-3 py-2 text-xs text-muted-foreground">{s.enrollment_status}</td>
                       <td className="px-3 py-2 text-center">
                         <div className="flex items-center justify-center gap-1">
                           {STATUS_OPTIONS.map((opt) => (
@@ -481,6 +556,24 @@ const AttendanceDashboard = () => {
             </table>
           </div>
         )}
+      </div>
+
+      {/* Floating Save Button */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <Button
+          size="lg"
+          onClick={handleSave}
+          disabled={saving || !canEdit}
+          className={`rounded-full shadow-lg px-6 ${hasUnsavedChanges ? "animate-pulse" : ""}`}
+        >
+          <Save className="mr-2 h-5 w-5" />
+          {saving ? "Saving..." : "Save All"}
+          {hasUnsavedChanges && (
+            <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold">
+              !
+            </span>
+          )}
+        </Button>
       </div>
     </div>
   );

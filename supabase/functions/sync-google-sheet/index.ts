@@ -3,9 +3,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-const SHEET_CSV_URL =
-  'https://docs.google.com/spreadsheets/d/e/2PACX-1vQKYUpS_BgzI35ehk8rW__fB0f6ZFNv08mn7gY12OKEriycjUgFayjL0KXRm9yMrIT2KXyHe_g4m6YL/pub?gid=0&single=true&output=csv';
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 // Parse CSV properly handling quoted fields with newlines
@@ -45,7 +42,6 @@ function parseCSV(text: string): string[][] {
       }
     }
   }
-  // Last row
   fields.push(current.trim());
   if (fields.some(f => f !== '')) {
     rows.push([...fields]);
@@ -64,31 +60,19 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     
-    // Authorization: allow trusted scheduler calls, otherwise require owner/admin
+    // Authorization
     const authHeader = req.headers.get('Authorization');
-    const apikeyHeader = req.headers.get('apikey');
     const userAgent = (req.headers.get('user-agent') || '').toLowerCase();
     const cronSourceHeader = req.headers.get('x-sync-source');
     const token = authHeader?.startsWith('Bearer ') ? authHeader.replace('Bearer ', '') : '';
 
-    // Trusted scheduler signal: pg_net user-agent + private cron marker header
     const isSchedulerCall = userAgent.includes('pg_net') && cronSourceHeader === 'pg_cron_sync';
     const isCronCall = token === anonKey || isSchedulerCall;
-
-    console.log('Auth context:', JSON.stringify({
-      hasAuthorization: !!authHeader,
-      hasApikey: !!apikeyHeader,
-      userAgent,
-      hasCronHeader: !!cronSourceHeader,
-      cron: isCronCall,
-    }));
     
     if (!isCronCall) {
-      // Manual call — verify caller has owner or admin role
       if (!authHeader?.startsWith('Bearer ')) {
         return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
-          status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         });
       }
       
@@ -96,36 +80,38 @@ Deno.serve(async (req) => {
         global: { headers: { Authorization: authHeader } }
       });
       
-      const { data: claims, error: claimsError } = await authClient.auth.getClaims(token);
-      if (claimsError || !claims?.claims?.sub) {
+      const { data: { user: caller }, error: userErr } = await authClient.auth.getUser(token);
+      if (userErr || !caller) {
         return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
-          status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         });
       }
       
-      const userId = claims.claims.sub;
       const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
-      
       const { data: roleRow } = await supabaseAdmin
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .maybeSingle();
+        .from('user_roles').select('role').eq('user_id', caller.id).maybeSingle();
       
       if (!roleRow || !['owner', 'admin'].includes(roleRow.role)) {
-        return new Response(JSON.stringify({ error: 'Forbidden - requires owner or admin role' }), { 
-          status: 403, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        return new Response(JSON.stringify({ error: 'Forbidden' }), { 
+          status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         });
       }
     }
     
-    console.log(`Sync triggered (cron: ${isCronCall})`);
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    console.log('Fetching Google Sheet CSV...');
-    const csvResponse = await fetch(SHEET_CSV_URL);
+    // Read CSV URL from system_settings
+    const { data: settingRow } = await supabase
+      .from('system_settings').select('value').eq('key', 'google_sheet_csv_url').single();
+    
+    let csvUrl = settingRow?.value;
+    if (!csvUrl) {
+      // Fallback to hardcoded URL
+      csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQKYUpS_BgzI35ehk8rW__fB0f6ZFNv08mn7gY12OKEriycjUgFayjL0KXRm9yMrIT2KXyHe_g4m6YL/pub?gid=0&single=true&output=csv';
+    }
+
+    console.log('Fetching Google Sheet CSV from system_settings...');
+    const csvResponse = await fetch(csvUrl);
     if (!csvResponse.ok) {
       throw new Error(`Failed to fetch sheet: ${csvResponse.status}`);
     }
@@ -140,12 +126,9 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Normalize headers: lowercase, collapse whitespace/newlines to _
     const headers = rows[0].map((h) =>
       h.toLowerCase().replace(/[\s\n\r]+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '')
     );
-
-    console.log('Parsed headers:', JSON.stringify(headers.slice(0, 20)));
 
     const colIndex = (names: string[]) => {
       for (const name of names) {
@@ -169,11 +152,6 @@ Deno.serve(async (req) => {
     const enrollmentDateIdx = colIndex(['enrollment_date']);
     const enrollmentStatusIdx = colIndex(['enrollment_status']);
     const mobileIdx = colIndex(['registered_contact_number', 'contact_number', 'mobile']);
-
-    console.log('Column indices:', JSON.stringify({
-      rollNo: rollNoIdx, name: studentNameIdx, status: enrollmentStatusIdx, mobile: mobileIdx
-    }));
-    console.log(`Found ${rows.length - 1} parsed rows`);
 
     const students: any[] = [];
     let skippedMissingRequired = 0;
@@ -211,16 +189,14 @@ Deno.serve(async (req) => {
     }
 
     if (skippedMissingRequired > 0) {
-      console.warn(`Skipped ${skippedMissingRequired} row(s) due to missing roll_no or student_name`, JSON.stringify(skippedSamples));
+      console.warn(`Skipped ${skippedMissingRequired} row(s)`, JSON.stringify(skippedSamples));
     }
 
-    // Upsert students by roll_no
     let synced = 0;
     for (const student of students) {
       const { error } = await supabase
         .from('students')
         .upsert(student, { onConflict: 'roll_no' });
-
       if (error) {
         console.error(`Error upserting ${student.roll_no}:`, error.message);
       } else {
@@ -228,10 +204,16 @@ Deno.serve(async (req) => {
       }
     }
 
-    console.log(`Prepared ${students.length} valid students, synced ${synced}`);
+    // Update last_sync_at
+    await supabase.from('system_settings').upsert(
+      { key: 'last_sync_at', value: new Date().toISOString() },
+      { onConflict: 'key' }
+    );
+
+    console.log(`Synced ${synced} of ${students.length} students`);
 
     return new Response(
-      JSON.stringify({ success: true, synced, total: students.length, skipped: skippedMissingRequired, skipped_samples: skippedSamples }),
+      JSON.stringify({ success: true, synced, total: students.length, skipped: skippedMissingRequired }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {

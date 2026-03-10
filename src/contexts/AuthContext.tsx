@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 type PageAccessMap = Record<string, boolean>;
 
@@ -42,20 +43,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const fetchUserMeta = async (userId: string) => {
-      const [{ data: roleRow }, { data: statusRow }, { data: accessRows }] = await Promise.all([
-        supabase.from("user_roles").select("role").eq("user_id", userId).maybeSingle(),
-        supabase.from("user_status").select("status").eq("user_id", userId).maybeSingle(),
-        supabase.from("page_access").select("page_name,has_access").eq("user_id", userId),
-      ]);
+      try {
+        const [{ data: roleRow }, { data: statusRow }, { data: accessRows }] = await Promise.all([
+          supabase.from("user_roles").select("role").eq("user_id", userId).maybeSingle(),
+          supabase.from("user_status").select("status").eq("user_id", userId).maybeSingle(),
+          supabase.from("page_access").select("page_name,has_access").eq("user_id", userId),
+        ]);
 
-      setUserRole((roleRow as any)?.role ?? null);
-      setUserStatus((statusRow as any)?.status ?? null);
+        setUserRole((roleRow as any)?.role ?? null);
+        setUserStatus((statusRow as any)?.status ?? null);
 
-      const map: PageAccessMap = {};
-      (accessRows ?? []).forEach((r: any) => {
-        map[String(r.page_name)] = !!r.has_access;
-      });
-      setPageAccess(map);
+        const map: PageAccessMap = {};
+        (accessRows ?? []).forEach((r: any) => {
+          map[String(r.page_name)] = !!r.has_access;
+        });
+        setPageAccess(map);
+      } catch (error) {
+        console.error("Failed to load account info:", error);
+        toast.error("Failed to load account info. Please refresh.");
+      }
     };
 
     const hydrate = async (nextSession: Session | null) => {
