@@ -119,15 +119,6 @@ const AttendanceDashboard = () => {
     });
   }, [students, classroomFilter, gradeFilter, searchQuery]);
 
-  const handleStatusToggle = (studentId: string) => {
-    const current = attendance[studentId] || "";
-    const order = ["P", "AB", "L", ""];
-    const nextIdx = (order.indexOf(current) + 1) % order.length;
-    setAttendance((prev) => ({
-      ...prev,
-      [studentId]: order[nextIdx],
-    }));
-  };
 
   const handleSetAll = (status: string) => {
     const map: Record<string, string> = { ...attendance };
