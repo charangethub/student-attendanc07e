@@ -11,60 +11,70 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const appsScriptUrl = Deno.env.get('GOOGLE_APPS_SCRIPT_URL');
-    if (!appsScriptUrl) {
-      throw new Error('GOOGLE_APPS_SCRIPT_URL is not configured');
-    }
-
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     
-    // Authorization check - verify caller has owner or admin role
+    // Authorization check
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
-        status: 401, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      });
-    }
-    
-    const authClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } }
-    });
-    
-    const token = authHeader.replace('Bearer ', '');
-    const { data: claims, error: claimsError } = await authClient.auth.getClaims(token);
-    if (claimsError || !claims?.claims?.sub) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
-        status: 401, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      });
-    }
-    
-    const userId = claims.claims.sub;
+    const userAgent = (req.headers.get('user-agent') || '').toLowerCase();
+    const cronSourceHeader = req.headers.get('x-sync-source');
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.replace('Bearer ', '') : '';
+
+    const isSchedulerCall = userAgent.includes('pg_net') && cronSourceHeader === 'pg_cron_sync';
+    const isCronCall = token === anonKey || isSchedulerCall;
+
     const supabase = createClient(supabaseUrl, serviceRoleKey);
-    
-    // Verify caller has owner or admin role
-    const { data: roleRow } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId)
-      .maybeSingle();
-    
-    if (!roleRow || !['owner', 'admin'].includes(roleRow.role)) {
-      return new Response(JSON.stringify({ error: 'Forbidden - requires owner or admin role' }), { 
-        status: 403, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+
+    if (!isCronCall) {
+      if (!authHeader?.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
+          status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        });
+      }
+      
+      const authClient = createClient(supabaseUrl, anonKey, {
+        global: { headers: { Authorization: authHeader } }
       });
+      
+      const { data: { user: caller }, error: userErr } = await authClient.auth.getUser(token);
+      if (userErr || !caller) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
+          status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        });
+      }
+      
+      const { data: roleRow } = await supabase
+        .from('user_roles').select('role').eq('user_id', caller.id).maybeSingle();
+      
+      if (!roleRow || !['owner', 'admin'].includes(roleRow.role)) {
+        return new Response(JSON.stringify({ error: 'Forbidden' }), { 
+          status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        });
+      }
     }
 
-    const { date } = await req.json();
+    // Read Apps Script URL from system_settings
+    const { data: settingRow } = await supabase
+      .from('system_settings').select('value').eq('key', 'google_apps_script_url').single();
+    
+    const appsScriptUrl = settingRow?.value;
+    if (!appsScriptUrl) {
+      return new Response(
+        JSON.stringify({ error: 'google_apps_script_url not configured. Go to Admin Panel > System Settings to set it.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    let body: any = {};
+    try {
+      body = await req.json();
+    } catch {}
+    const { date } = body;
     if (!date) throw new Error('date is required');
 
     console.log(`Syncing attendance for date: ${date}`);
 
-    // 1. Fetch ALL students
     const { data: allStudents, error: studentsErr } = await supabase
       .from('students')
       .select('id, roll_no, student_name, curriculum, grade, batch_type, classroom_name, classroom_id, enrollment_status, enrollment_date, center, mobile_number, zone, user_id_vedantu, order_id')
@@ -72,13 +82,6 @@ Deno.serve(async (req) => {
 
     if (studentsErr) throw new Error('Failed to fetch students: ' + studentsErr.message);
 
-    // Build student lookup by id
-    const studentById: Record<string, any> = {};
-    (allStudents ?? []).forEach((s: any) => {
-      studentById[s.id] = s;
-    });
-
-    // 2. Fetch attendance for the date
     const { data: attendanceData, error: attErr } = await supabase
       .from('attendance')
       .select('student_id, status, remark')
@@ -86,17 +89,13 @@ Deno.serve(async (req) => {
 
     if (attErr) throw new Error('Failed to fetch attendance: ' + attErr.message);
 
-    // Build attendance lookup by student_id
     const attendanceByStudent: Record<string, any> = {};
     (attendanceData ?? []).forEach((a: any) => {
       attendanceByStudent[a.student_id] = a;
     });
 
-    // Enrolled students only
     const enrolledStudents = (allStudents ?? []).filter((s: any) => s.enrollment_status === 'ENROLLED');
 
-    // 3. Build FULL records for ALL enrolled students (include empty status for students without records)
-    // This ensures the sheet OVERWRITES cells — clearing old values when status is removed
     const records = enrolledStudents.map((s: any) => {
       const att = attendanceByStudent[s.id];
       return {
@@ -108,12 +107,11 @@ Deno.serve(async (req) => {
         enrollment_status: s.enrollment_status || '',
         center: s.center || '',
         mobile_number: s.mobile_number || '',
-        status: att ? att.status : '',  // empty string if no record — sheet will clear the cell
+        status: att ? att.status : '',
         remark: att ? (att.remark || '') : '',
       };
     });
 
-    // Build absentees list (AB and L only) with full details
     const absentees = records
       .filter((r: any) => r.status === 'AB' || r.status === 'L')
       .map((r: any) => ({
@@ -128,36 +126,31 @@ Deno.serve(async (req) => {
         remark: r.remark,
       }));
 
-    // Build month label and date label for sheet naming
     const dateObj = new Date(date + 'T00:00:00');
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const monthLabel = `${monthNames[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
     const day = dateObj.getDate().toString().padStart(2, '0');
     const dateLabel = `${day} ${monthNames[dateObj.getMonth()]}`;
 
-    // 4. Sync Master sheet
+    // Sync Master
     console.log(`Syncing master sheet with ${enrolledStudents.length} students...`);
-    const masterRes = await fetch(appsScriptUrl, {
+    await fetch(appsScriptUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'sync_master', students: enrolledStudents }),
     });
-    const masterText = await masterRes.text();
-    console.log('Master sync response:', masterText);
 
-    // 5. Sync Daily Attendance — sends ALL enrolled students so sheet overwrites correctly
-    console.log(`Syncing daily attendance with ${records.length} records (${records.filter((r: any) => r.status).length} marked)...`);
-    const attRes = await fetch(appsScriptUrl, {
+    // Sync Daily Attendance
+    console.log(`Syncing daily attendance with ${records.length} records...`);
+    await fetch(appsScriptUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'sync_attendance', date, records }),
     });
-    const attText = await attRes.text();
-    console.log('Attendance sync response:', attText);
 
-    // 6. Sync Monthly Absentee Report (each day = 9-column block)
-    console.log(`Syncing monthly absentee report: ${monthLabel}, date: ${dateLabel}, ${absentees.length} absentees...`);
-    const absRes = await fetch(appsScriptUrl, {
+    // Sync Absentees
+    console.log(`Syncing absentees: ${absentees.length}...`);
+    await fetch(appsScriptUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -165,11 +158,49 @@ Deno.serve(async (req) => {
         date,
         date_label: dateLabel,
         month_label: monthLabel,
-        absentees: absentees,
+        absentees,
       }),
     });
-    const absText = await absRes.text();
-    console.log('Absentee sync response:', absText);
+
+    // Sync Analytics
+    const presentCount = records.filter((r: any) => r.status === 'P').length;
+    const absentCount = records.filter((r: any) => r.status === 'AB').length;
+    const leaveCount = records.filter((r: any) => r.status === 'L').length;
+    const totalStudents = records.length;
+    const attendancePct = totalStudents > 0 ? Math.round((presentCount / totalStudents) * 100) : 0;
+
+    // Classroom breakdown
+    const classroomMap: Record<string, { present: number; absent: number; total: number }> = {};
+    records.forEach((r: any) => {
+      if (!classroomMap[r.classroom_name]) {
+        classroomMap[r.classroom_name] = { present: 0, absent: 0, total: 0 };
+      }
+      classroomMap[r.classroom_name].total++;
+      if (r.status === 'P') classroomMap[r.classroom_name].present++;
+      if (r.status === 'AB' || r.status === 'L') classroomMap[r.classroom_name].absent++;
+    });
+
+    const classroomBreakdown = Object.entries(classroomMap).map(([classroom, stats]) => ({
+      classroom,
+      present: stats.present,
+      absent: stats.absent,
+      pct: stats.total > 0 ? Math.round((stats.present / stats.total) * 100) : 0,
+    }));
+
+    await fetch(appsScriptUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'sync_analytics',
+        date,
+        total_students: totalStudents,
+        present_count: presentCount,
+        absent_count: absentCount,
+        leave_count: leaveCount,
+        attendance_pct: attendancePct,
+        classroom_breakdown: classroomBreakdown,
+      }),
+    });
 
     return new Response(
       JSON.stringify({ success: true, synced: records.filter((r: any) => r.status).length, total: records.length, absentees: absentees.length }),
