@@ -8,6 +8,7 @@ import {
   Shield,
   LogOut,
   RefreshCw,
+  ExternalLink,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate } from "react-router-dom";
@@ -15,6 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useSystemSettings } from "@/hooks/useSystemSettings";
 
 import {
   Sidebar,
@@ -44,6 +46,7 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const { user, userRole, userStatus, pageAccess, signOut } = useAuth();
   const [syncing, setSyncing] = useState(false);
+  const { data: settings } = useSystemSettings();
 
   const visibleMainItems = mainItems.filter((item) => {
     if (userRole === "owner") return true;
@@ -67,6 +70,12 @@ export function AppSidebar() {
     }
     setSyncing(false);
   };
+
+  // Linked apps from system_settings
+  const linkedApps = [
+    { url: settings?.linked_app_url_1, label: settings?.linked_app_url_1_label },
+    { url: settings?.linked_app_url_2, label: settings?.linked_app_url_2_label },
+  ].filter((app) => app.url);
 
   return (
     <Sidebar collapsible="icon">
@@ -126,6 +135,36 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {/* Linked Apps */}
+        {linkedApps.length > 0 && (
+          <SidebarGroup>
+            {!collapsed && (
+              <SidebarGroupLabel className="text-sidebar-foreground/70 px-3 py-2 text-xs uppercase tracking-wider">
+                Linked Apps
+              </SidebarGroupLabel>
+            )}
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {linkedApps.map((app, i) => (
+                  <SidebarMenuItem key={i}>
+                    <SidebarMenuButton asChild>
+                      <a
+                        href={app.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                      >
+                        <ExternalLink className="h-5 w-5 shrink-0" />
+                        {!collapsed && <span>{app.label || "External App"}</span>}
+                      </a>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="bg-sidebar-background border-t border-sidebar-border p-3">
