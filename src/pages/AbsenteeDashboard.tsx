@@ -106,22 +106,15 @@ const AbsenteeDashboard = () => {
     setSavingRemarks(true);
     const updates = Object.entries(remarks).filter(([id]) => id);
     
-    let errorOccurred = false;
-    for (const [id, remark] of updates) {
-      const { error } = await supabase
-        .from("attendance")
-        .update({ remark } as any)
-        .eq("id", id);
-      if (error) {
-        errorOccurred = true;
-        toast.error("Failed to save remark: " + error.message);
-        break;
-      }
-    }
-    
-    if (!errorOccurred) {
+    try {
+      await Promise.all(
+        updates.map(([id, remark]) =>
+          supabase.from("attendance").update({ remark } as any).eq("id", id).then(({ error }) => {
+            if (error) throw error;
+          })
+        )
+      );
       toast.success("Remarks saved successfully");
-      // Sync to Google Sheet
       try {
         await supabase.functions.invoke("sync-to-sheet", {
           body: { date: selectedDate },
@@ -130,6 +123,8 @@ const AbsenteeDashboard = () => {
       } catch (e) {
         console.error("Sheet sync error:", e);
       }
+    } catch (err: any) {
+      toast.error("Failed to save remarks: " + err.message);
     }
     setSavingRemarks(false);
   };
