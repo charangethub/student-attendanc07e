@@ -66,7 +66,7 @@ const AdminPanel = () => {
   const fetchUsers = async () => {
     setLoading(true);
     const { data: profiles } = await supabase.from("profiles").select("*");
-    const { data: roles } = await supabase.from("user_roles").select("*");
+    const { data: roles } = await supabase.from("user_roles").select("user_id, role, admin_panel_access");
     const { data: statuses } = await supabase.from("user_status").select("*");
     const { data: access } = await supabase.from("page_access").select("*");
 
