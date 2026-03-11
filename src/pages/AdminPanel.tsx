@@ -31,14 +31,15 @@ interface UserData {
 }
 
 const SETTINGS_KEYS = [
-  { key: "google_apps_script_url", label: "Google Apps Script URL" },
-  { key: "google_sheet_csv_url", label: "Google Sheet CSV URL" },
+  { key: "google_apps_script_url", label: "Google Apps Script URL (Sheet sync target)" },
+  { key: "google_sheet_csv_url", label: "Google Sheet CSV URL (Published CSV — source of student data)", hint: "Use the CSV export URL: change pubhtml → pub and add &output=csv at the end." },
+  { key: "sync_interval_minutes", label: "Auto-Sync Interval in Minutes (1 = every minute, 0 = off)" },
   { key: "web_app_url", label: "Web App URL" },
   { key: "linked_app_url_1", label: "Linked App 1 URL" },
   { key: "linked_app_url_1_label", label: "Linked App 1 Label" },
   { key: "linked_app_url_2", label: "Linked App 2 URL" },
   { key: "linked_app_url_2_label", label: "Linked App 2 Label" },
-  { key: "auto_approve_google", label: "Auto-approve Google Sign-ins (true/false)" },
+  { key: "auto_approve_google", label: "Auto-Approve Google Sign-ins (true / false)" },
 ];
 
 const AdminPanel = () => {
