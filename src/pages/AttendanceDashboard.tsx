@@ -51,7 +51,7 @@ const AttendanceDashboard = () => {
   const [existingRecords, setExistingRecords] = useState<AttendanceRecord[]>([]);
   const [selectedDate, setSelectedDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [classroomFilter, setClassroomFilter] = useState("all");
-  const [gradeFilter, setGradeFilter] = useState("all");
+  const [enrollmentFilter, setEnrollmentFilter] = useState("ENROLLED");
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
