@@ -118,7 +118,7 @@ const AttendanceDashboard = () => {
   const filteredStudents = useMemo(() => {
     return students.filter((s) => {
       if (classroomFilter !== "all" && s.classroom_name !== classroomFilter) return false;
-      if (gradeFilter !== "all" && s.grade !== gradeFilter) return false;
+      if (enrollmentFilter !== "all" && s.enrollment_status !== enrollmentFilter) return false;
       if (showUnmarkedOnly && attendance[s.id]) return false;
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
