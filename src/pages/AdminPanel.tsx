@@ -85,6 +85,7 @@ const AdminPanel = () => {
         role: role?.role ?? null,
         status: status?.status ?? "pending",
         pageAccess: userAccess,
+        adminPanelAccess: (role as any)?.admin_panel_access ?? false,
       };
     });
 
