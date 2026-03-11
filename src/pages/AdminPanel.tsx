@@ -355,6 +355,24 @@ const AdminPanel = () => {
                             </div>
                           )}
                         </td>
+                        <td className="px-4 py-4 text-center">
+                          {isOwner ? (
+                            <span className="text-sm italic text-muted-foreground">—</span>
+                          ) : (
+                            <Checkbox
+                              checked={u.adminPanelAccess}
+                              onCheckedChange={(checked) => {
+                                setUsers((prev) =>
+                                  prev.map((usr) =>
+                                    usr.user_id === u.user_id
+                                      ? { ...usr, adminPanelAccess: !!checked }
+                                      : usr
+                                  )
+                                );
+                              }}
+                            />
+                          )}
+                        </td>
                         <td className="px-4 py-4">
                           {isOwner ? (
                             <span className="inline-flex items-center rounded-full border border-success px-3 py-1 text-xs font-medium text-success">
