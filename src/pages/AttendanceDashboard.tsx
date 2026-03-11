@@ -110,8 +110,8 @@ const AttendanceDashboard = () => {
     [students]
   );
 
-  const grades = useMemo(
-    () => [...new Set(students.map((s) => s.grade).filter(Boolean))].sort(),
+  const enrollmentStatuses = useMemo(
+    () => [...new Set(students.map((s) => s.enrollment_status).filter(Boolean))].sort(),
     [students]
   );
 
