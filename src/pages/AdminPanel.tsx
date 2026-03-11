@@ -469,9 +469,10 @@ const AdminPanel = () => {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {SETTINGS_KEYS.map(({ key, label }) => (
+                    {SETTINGS_KEYS.map(({ key, label, hint }: any) => (
                       <div key={key} className="space-y-1.5">
                         <Label className="text-sm">{label}</Label>
+                        {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
                         <Input
                           value={settings[key] ?? ""}
                           onChange={(e) =>
