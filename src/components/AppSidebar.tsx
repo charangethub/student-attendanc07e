@@ -117,7 +117,7 @@ export function AppSidebar() {
                 </SidebarMenuItem>
               ))}
 
-              {(userRole === "owner" || userRole === "admin") && (
+              {(userRole === "owner" || adminPanelAccess) && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
                     <NavLink

@@ -1,8 +1,11 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Users } from "lucide-react";
+import { useAutoSync } from "@/hooks/useAutoSync";
 
 export function SidebarLayout({ children }: { children: React.ReactNode }) {
+  useAutoSync();
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">

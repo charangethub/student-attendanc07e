@@ -8,7 +8,7 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children, requiredRole, requiredPage }: ProtectedRouteProps) => {
-  const { user, loading, userRole, userStatus, pageAccess } = useAuth();
+  const { user, loading, userRole, userStatus, pageAccess, adminPanelAccess } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -25,24 +25,22 @@ const ProtectedRoute = ({ children, requiredRole, requiredPage }: ProtectedRoute
 
   const isOnPendingPage = location.pathname === "/pending-approval";
   const isApproved = userRole && userStatus === "active";
-
-  // Owners always approved
   const isOwner = userRole === "owner";
 
-  // If user is NOT approved and NOT owner, redirect to pending page (unless already there)
   if (!isOwner && !isApproved && !isOnPendingPage) {
     return <Navigate to="/pending-approval" replace />;
   }
 
-  // If user IS approved/owner but on pending page, redirect to dashboard
   if ((isOwner || isApproved) && isOnPendingPage) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // Role-based check
+  // Role-based check — for admin route, also allow users with admin_panel_access
   if (requiredRole) {
     if (!userRole) return <Navigate to="/dashboard" replace />;
-    if (!requiredRole.includes(userRole)) return <Navigate to="/dashboard" replace />;
+    const hasRole = requiredRole.includes(userRole);
+    const hasAdminAccess = requiredRole.includes("owner") && adminPanelAccess;
+    if (!hasRole && !hasAdminAccess) return <Navigate to="/dashboard" replace />;
   }
 
   // Page-access check
