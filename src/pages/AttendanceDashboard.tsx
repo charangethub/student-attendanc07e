@@ -377,14 +377,14 @@ const AttendanceDashboard = () => {
               ))}
             </SelectContent>
           </Select>
-          <Select value={gradeFilter} onValueChange={setGradeFilter}>
-            <SelectTrigger className="w-28">
-              <SelectValue placeholder="All Grades" />
+          <Select value={enrollmentFilter} onValueChange={setEnrollmentFilter}>
+            <SelectTrigger className="w-44">
+              <SelectValue placeholder="All Enrollment" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Grades</SelectItem>
-              {grades.map((g) => (
-                <SelectItem key={g} value={g}>Grade {g}</SelectItem>
+              <SelectItem value="all">All Enrollment</SelectItem>
+              {enrollmentStatuses.map((s) => (
+                <SelectItem key={s} value={s}>{s}</SelectItem>
               ))}
             </SelectContent>
           </Select>
