@@ -129,7 +129,7 @@ const AttendanceDashboard = () => {
       }
       return true;
     });
-  }, [students, classroomFilter, gradeFilter, searchQuery, showUnmarkedOnly, attendance]);
+  }, [students, classroomFilter, enrollmentFilter, searchQuery, showUnmarkedOnly, attendance]);
 
   const handleSetAll = (status: string) => {
     const map: Record<string, string> = { ...attendance };
