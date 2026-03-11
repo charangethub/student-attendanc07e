@@ -81,7 +81,7 @@ const AttendanceDashboard = () => {
     const { data, error } = await supabase
       .from("students")
       .select("id, roll_no, student_name, grade, curriculum, classroom_name, enrollment_status, enrollment_date, center, mobile_number")
-      .eq("enrollment_status", "ENROLLED")
+      .neq("roll_no", "")
       .order("roll_no");
     if (error) {
       toast.error("Failed to load students");
