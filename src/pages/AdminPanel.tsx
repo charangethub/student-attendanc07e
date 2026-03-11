@@ -27,17 +27,19 @@ interface UserData {
   role: string | null;
   status: string;
   pageAccess: Record<string, boolean>;
+  adminPanelAccess: boolean;
 }
 
 const SETTINGS_KEYS = [
-  { key: "google_apps_script_url", label: "Google Apps Script URL" },
-  { key: "google_sheet_csv_url", label: "Google Sheet CSV URL" },
+  { key: "google_apps_script_url", label: "Google Apps Script URL (Sheet sync target)" },
+  { key: "google_sheet_csv_url", label: "Google Sheet CSV URL (Published CSV — source of student data)", hint: "Use the CSV export URL: change pubhtml → pub and add &output=csv at the end." },
+  { key: "sync_interval_minutes", label: "Auto-Sync Interval in Minutes (1 = every minute, 0 = off)" },
   { key: "web_app_url", label: "Web App URL" },
   { key: "linked_app_url_1", label: "Linked App 1 URL" },
   { key: "linked_app_url_1_label", label: "Linked App 1 Label" },
   { key: "linked_app_url_2", label: "Linked App 2 URL" },
   { key: "linked_app_url_2_label", label: "Linked App 2 Label" },
-  { key: "auto_approve_google", label: "Auto-approve Google Sign-ins (true/false)" },
+  { key: "auto_approve_google", label: "Auto-Approve Google Sign-ins (true / false)" },
 ];
 
 const AdminPanel = () => {
@@ -64,7 +66,7 @@ const AdminPanel = () => {
   const fetchUsers = async () => {
     setLoading(true);
     const { data: profiles } = await supabase.from("profiles").select("*");
-    const { data: roles } = await supabase.from("user_roles").select("*");
+    const { data: roles } = await supabase.from("user_roles").select("user_id, role, admin_panel_access");
     const { data: statuses } = await supabase.from("user_status").select("*");
     const { data: access } = await supabase.from("page_access").select("*");
 
@@ -83,6 +85,7 @@ const AdminPanel = () => {
         role: role?.role ?? null,
         status: status?.status ?? "pending",
         pageAccess: userAccess,
+        adminPanelAccess: (role as any)?.admin_panel_access ?? false,
       };
     });
 
@@ -128,7 +131,7 @@ const AdminPanel = () => {
     if (userData.role) {
       const { error: roleError } = await supabase
         .from("user_roles")
-        .upsert({ user_id: userData.user_id, role: userData.role as any }, { onConflict: "user_id" });
+        .upsert({ user_id: userData.user_id, role: userData.role as any, admin_panel_access: userData.adminPanelAccess } as any, { onConflict: "user_id" });
       if (roleError) {
         toast.error("Failed to save role: " + roleError.message);
         return;
@@ -292,6 +295,7 @@ const AdminPanel = () => {
                     <th className="px-4 py-3 text-left text-sm font-semibold">Email</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold">Role</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold">Page Access</th>
+                    <th className="px-4 py-3 text-center text-sm font-semibold">Panel Access</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold">Status</th>
                     <th className="px-4 py-3 text-right text-sm font-semibold">Actions</th>
                   </tr>
@@ -349,6 +353,24 @@ const AdminPanel = () => {
                                 </label>
                               ))}
                             </div>
+                          )}
+                        </td>
+                        <td className="px-4 py-4 text-center">
+                          {isOwner ? (
+                            <span className="text-sm italic text-muted-foreground">—</span>
+                          ) : (
+                            <Checkbox
+                              checked={u.adminPanelAccess}
+                              onCheckedChange={(checked) => {
+                                setUsers((prev) =>
+                                  prev.map((usr) =>
+                                    usr.user_id === u.user_id
+                                      ? { ...usr, adminPanelAccess: !!checked }
+                                      : usr
+                                  )
+                                );
+                              }}
+                            />
                           )}
                         </td>
                         <td className="px-4 py-4">
@@ -447,9 +469,10 @@ const AdminPanel = () => {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {SETTINGS_KEYS.map(({ key, label }) => (
+                    {SETTINGS_KEYS.map(({ key, label, hint }: any) => (
                       <div key={key} className="space-y-1.5">
                         <Label className="text-sm">{label}</Label>
+                        {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
                         <Input
                           value={settings[key] ?? ""}
                           onChange={(e) =>

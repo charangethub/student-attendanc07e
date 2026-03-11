@@ -28,7 +28,7 @@ const DailyAttendanceReport = () => {
     const fetch = async () => {
       setLoading(true);
       const [stuRes, attRes] = await Promise.all([
-        supabase.from("students").select("id, classroom_name, enrollment_status").eq("enrollment_status", "ENROLLED"),
+        supabase.from("students").select("id, classroom_name, enrollment_status").neq("roll_no", "").eq("enrollment_status", "ENROLLED"),
         supabase.from("attendance").select("student_id, status").eq("date", selectedDate),
       ]);
       setStudents(stuRes.data ?? []);

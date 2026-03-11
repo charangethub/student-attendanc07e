@@ -15,6 +15,6 @@ export function useSystemSettings() {
       });
       return map;
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 1000,
   });
 }

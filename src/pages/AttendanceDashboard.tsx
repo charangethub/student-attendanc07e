@@ -51,7 +51,7 @@ const AttendanceDashboard = () => {
   const [existingRecords, setExistingRecords] = useState<AttendanceRecord[]>([]);
   const [selectedDate, setSelectedDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [classroomFilter, setClassroomFilter] = useState("all");
-  const [gradeFilter, setGradeFilter] = useState("all");
+  const [enrollmentFilter, setEnrollmentFilter] = useState("ENROLLED");
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -81,7 +81,7 @@ const AttendanceDashboard = () => {
     const { data, error } = await supabase
       .from("students")
       .select("id, roll_no, student_name, grade, curriculum, classroom_name, enrollment_status, enrollment_date, center, mobile_number")
-      .eq("enrollment_status", "ENROLLED")
+      .neq("roll_no", "")
       .order("roll_no");
     if (error) {
       toast.error("Failed to load students");
@@ -110,15 +110,15 @@ const AttendanceDashboard = () => {
     [students]
   );
 
-  const grades = useMemo(
-    () => [...new Set(students.map((s) => s.grade).filter(Boolean))].sort(),
+  const enrollmentStatuses = useMemo(
+    () => [...new Set(students.map((s) => s.enrollment_status).filter(Boolean))].sort(),
     [students]
   );
 
   const filteredStudents = useMemo(() => {
     return students.filter((s) => {
       if (classroomFilter !== "all" && s.classroom_name !== classroomFilter) return false;
-      if (gradeFilter !== "all" && s.grade !== gradeFilter) return false;
+      if (enrollmentFilter !== "all" && s.enrollment_status !== enrollmentFilter) return false;
       if (showUnmarkedOnly && attendance[s.id]) return false;
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
@@ -129,7 +129,7 @@ const AttendanceDashboard = () => {
       }
       return true;
     });
-  }, [students, classroomFilter, gradeFilter, searchQuery, showUnmarkedOnly, attendance]);
+  }, [students, classroomFilter, enrollmentFilter, searchQuery, showUnmarkedOnly, attendance]);
 
   const handleSetAll = (status: string) => {
     const map: Record<string, string> = { ...attendance };
@@ -377,14 +377,14 @@ const AttendanceDashboard = () => {
               ))}
             </SelectContent>
           </Select>
-          <Select value={gradeFilter} onValueChange={setGradeFilter}>
-            <SelectTrigger className="w-28">
-              <SelectValue placeholder="All Grades" />
+          <Select value={enrollmentFilter} onValueChange={setEnrollmentFilter}>
+            <SelectTrigger className="w-44">
+              <SelectValue placeholder="All Enrollment" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Grades</SelectItem>
-              {grades.map((g) => (
-                <SelectItem key={g} value={g}>Grade {g}</SelectItem>
+              <SelectItem value="all">All Enrollment</SelectItem>
+              {enrollmentStatuses.map((s) => (
+                <SelectItem key={s} value={s}>{s}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -416,6 +416,9 @@ const AttendanceDashboard = () => {
           </Button>
           <Button variant="outline" size="sm" onClick={() => handleSetAll("AB")} className="text-xs bg-destructive/10 hover:bg-destructive/20 text-destructive border-destructive/30" disabled={!canEdit}>
             ✗ All Absent
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => handleSetAll("H")} className="text-xs bg-purple-600/10 hover:bg-purple-600/20 text-purple-600 border-purple-300" disabled={!canEdit}>
+            🏖 All Holiday
           </Button>
           <div className="h-4 w-px bg-border" />
           <div className="ml-auto flex items-center gap-1 rounded-lg border border-border p-0.5">

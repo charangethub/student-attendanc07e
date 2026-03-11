@@ -56,6 +56,7 @@ const AbsenteeDashboard = () => {
     const { data: studentsData } = await supabase
       .from("students")
       .select("id, roll_no, student_name, grade, curriculum, classroom_name, center, mobile_number")
+      .neq("roll_no", "")
       .in("id", studentIds);
 
     const remarkMap: Record<string, string> = {};

@@ -55,7 +55,7 @@ const App = () => (
             <Route
               path="/admin"
               element={
-                <ProtectedRoute requiredRole={["owner", "admin"]}>
+                <ProtectedRoute requiredRole={["owner"]}>
                   <SidebarLayout><AdminPanel /></SidebarLayout>
                 </ProtectedRoute>
               }
