@@ -27,6 +27,7 @@ interface UserData {
   role: string | null;
   status: string;
   pageAccess: Record<string, boolean>;
+  adminPanelAccess: boolean;
 }
 
 const SETTINGS_KEYS = [
