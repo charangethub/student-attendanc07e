@@ -131,7 +131,7 @@ const AdminPanel = () => {
     if (userData.role) {
       const { error: roleError } = await supabase
         .from("user_roles")
-        .upsert({ user_id: userData.user_id, role: userData.role as any }, { onConflict: "user_id" });
+        .upsert({ user_id: userData.user_id, role: userData.role as any, admin_panel_access: userData.adminPanelAccess } as any, { onConflict: "user_id" });
       if (roleError) {
         toast.error("Failed to save role: " + roleError.message);
         return;
