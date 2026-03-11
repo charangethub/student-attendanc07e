@@ -44,7 +44,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const navigate = useNavigate();
-  const { user, userRole, userStatus, pageAccess, signOut } = useAuth();
+  const { user, userRole, userStatus, pageAccess, adminPanelAccess, signOut } = useAuth();
   const [syncing, setSyncing] = useState(false);
   const { data: settings } = useSystemSettings();
 
