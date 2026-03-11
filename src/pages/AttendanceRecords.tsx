@@ -61,6 +61,7 @@ const AttendanceRecords = () => {
       supabase
         .from("students")
         .select("id, roll_no, student_name, grade, curriculum, classroom_name, enrollment_status")
+        .neq("roll_no", "")
         .order("roll_no"),
       supabase
         .from("attendance")

@@ -417,6 +417,9 @@ const AttendanceDashboard = () => {
           <Button variant="outline" size="sm" onClick={() => handleSetAll("AB")} className="text-xs bg-destructive/10 hover:bg-destructive/20 text-destructive border-destructive/30" disabled={!canEdit}>
             ✗ All Absent
           </Button>
+          <Button variant="outline" size="sm" onClick={() => handleSetAll("H")} className="text-xs bg-purple-600/10 hover:bg-purple-600/20 text-purple-600 border-purple-300" disabled={!canEdit}>
+            🏖 All Holiday
+          </Button>
           <div className="h-4 w-px bg-border" />
           <div className="ml-auto flex items-center gap-1 rounded-lg border border-border p-0.5">
             <button
